@@ -13,7 +13,7 @@ loginForm.addEventListener('submit', function(e){
 
   if(username === adminUser && password === adminPass){
     
-    window.location.href = "index.html";
+    window.location.href = "home.html";
   } else {
     errorMsg.textContent = "Invalid username or password!";
   }
