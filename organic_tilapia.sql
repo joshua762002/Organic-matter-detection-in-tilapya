@@ -52,9 +52,6 @@ VALUES
 ('SAMPLE-003', 45.10, 27.9, 7.2, 'Moderate', 2); -- created by staff
 
 
--- =========================
--- 3️⃣ ACTIVITY LOGS TABLE
--- =========================
 CREATE TABLE activity_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -63,7 +60,7 @@ CREATE TABLE activity_logs (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- Sample Logs
+
 INSERT INTO activity_logs (user_id, action)
 VALUES
 (1, 'Admin logged into the system'),

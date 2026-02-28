@@ -16,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   VALUES ('$username', '$password', '$fullname', 'staff')");
 
     // Redirect to login page
-    header("Location: login.php");
+    header("Location: index.php");
     exit();
 }
 ?>
@@ -80,7 +80,7 @@ body {
 <hr>
 
 <div class="text-center">
-<a href="login.php">Back to Login</a>
+<a href="index.php">Back to Login</a>
 </div>
 
 </div>
