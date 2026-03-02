@@ -97,7 +97,7 @@ Manage Users
 
 
 
-<h2 class="mb-4 text-primary">STAFF DASHBOARD</h2>
+<h2 class="mb-4 text-primary">USER DASHBOARD</h2>
 
 <div class="row mb-4">
 

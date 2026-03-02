@@ -12,6 +12,7 @@ if ($_SESSION["role"] !== "admin") {
     header("Location: dashboard.php");
     exit();
 }
+
 $conn = new mysqli("localhost", "root", "", "organic_tilapia");
 
 if ($conn->connect_error) {
@@ -34,8 +35,18 @@ $high = $conn->query("SELECT COUNT(*) as high FROM detections
 $totalUsers = $conn->query("SELECT COUNT(*) as total FROM users")
                    ->fetch_assoc()['total'];
 
-$latest = $conn->query("SELECT * FROM detections 
-                        ORDER BY detected_at DESC LIMIT 5");
+/* =========================
+   JOIN ADDED HERE
+========================= */
+$latest = $conn->query("SELECT 
+                        detections.*, 
+                        users.full_name, 
+                        users.role
+                        FROM detections
+                        INNER JOIN users 
+                        ON detections.created_by = users.user_id
+                        ORDER BY detections.detected_at DESC 
+                        LIMIT 5");
 ?>
 
 <!DOCTYPE html>
@@ -126,6 +137,8 @@ Latest Detection Records
 <th>pH</th>
 <th>Status</th>
 <th>Date</th>
+<th>Created By</th>
+<th>Role</th>
 <th>Action</th>
 </tr>
 </thead>
@@ -133,6 +146,7 @@ Latest Detection Records
 <tbody>
 <?php while($row = $latest->fetch_assoc()) { ?>
 <tr>
+
 <td><?php echo $row['sample_code']; ?></td>
 <td><?php echo $row['organic_level']; ?></td>
 <td><?php echo $row['water_temperature']; ?></td>
@@ -147,6 +161,18 @@ Latest Detection Records
 </td>
 
 <td><?php echo $row['detected_at']; ?></td>
+
+<!-- CREATED BY -->
+<td><?php echo $row['full_name']; ?></td>
+
+<!-- ROLE -->
+<td>
+<?php if($row['role'] == "admin") { ?>
+<span class="badge bg-dark">ADMIN</span>
+<?php } else { ?>
+<span class="badge bg-primary">STAFF</span>
+<?php } ?>
+</td>
 
 <td>
 <a href="delete_detection.php?id=<?php echo $row['detection_id']; ?>" 
