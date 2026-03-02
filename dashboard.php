@@ -1,12 +1,10 @@
 <?php
 session_start();
 
-
 if (!isset($_SESSION["user_id"])) {
     header("Location: index.php");
     exit();
 }
-
 
 $conn = new mysqli("localhost", "root", "", "organic_tilapia");
 
@@ -15,10 +13,14 @@ if ($conn->connect_error) {
 }
 
 $user_id = $_SESSION["user_id"];
-$user = $conn->query("SELECT * FROM users WHERE user_id = $user_id")->fetch_assoc();
 
+$stmt = $conn->prepare("SELECT * FROM users WHERE user_id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
 
-$total = $conn->query("SELECT COUNT(*) as total FROM detections")->fetch_assoc()['total'];
+$total = $conn->query("SELECT COUNT(*) as total FROM detections")
+              ->fetch_assoc()['total'];
 
 $high = $conn->query("SELECT COUNT(*) as high FROM detections 
                       WHERE status='High Organic Matter'")
@@ -36,7 +38,6 @@ $latest = $conn->query("SELECT * FROM detections ORDER BY detected_at DESC LIMIT
 
 <body style="background:#f4f9f9;">
 
-
 <nav class="navbar navbar-dark bg-dark">
 <div class="container-fluid">
 <span class="navbar-brand">
@@ -45,7 +46,7 @@ Tilapia Organic Matter Detection
 
 <div>
 <span class="text-white me-3">
-Welcome, <?php echo $user['full_name']; ?> 
+Welcome, <?php echo htmlspecialchars($user['full_name']); ?> 
 (<?php echo strtoupper($user['role']); ?>)
 </span>
 <a href="logout.php" class="btn btn-danger btn-sm">Logout</a>
@@ -54,7 +55,6 @@ Welcome, <?php echo $user['full_name']; ?>
 </nav>
 
 <div class="container mt-4">
-
 
 <?php if($user['role'] == 'admin') { ?>
 
@@ -95,8 +95,6 @@ Manage Users
 
 <?php } else { ?>
 
-
-
 <h2 class="mb-4 text-primary">USER DASHBOARD</h2>
 
 <div class="row mb-4">
@@ -123,7 +121,12 @@ Manage Users
 
 <?php } ?>
 
-
+<!-- ADD BUTTON FOR BOTH USER & ADMIN -->
+<div class="mb-3">
+<a href="add_detection.php" class="btn btn-success">
++ Add New Detection
+</a>
+</div>
 
 <div class="card shadow">
 <div class="card-header bg-success text-white">
@@ -151,7 +154,7 @@ Latest Detection Records
 <tbody>
 <?php while($row = $latest->fetch_assoc()) { ?>
 <tr>
-<td><?php echo $row['sample_code']; ?></td>
+<td><?php echo htmlspecialchars($row['sample_code']); ?></td>
 <td><?php echo $row['organic_level']; ?></td>
 <td><?php echo $row['water_temperature']; ?></td>
 <td><?php echo $row['ph_level']; ?></td>
@@ -159,6 +162,8 @@ Latest Detection Records
 <td>
 <?php if($row['status'] == "High Organic Matter") { ?>
 <span class="badge bg-danger"><?php echo $row['status']; ?></span>
+<?php } elseif($row['status'] == "Moderate") { ?>
+<span class="badge bg-warning text-dark"><?php echo $row['status']; ?></span>
 <?php } else { ?>
 <span class="badge bg-success"><?php echo $row['status']; ?></span>
 <?php } ?>
@@ -169,7 +174,8 @@ Latest Detection Records
 <?php if ($user['role'] == 'admin') { ?>
 <td>
 <a href="delete_detection.php?id=<?php echo $row['detection_id']; ?>" 
-   class="btn btn-sm btn-danger">
+   class="btn btn-sm btn-danger"
+   onclick="return confirm('Are you sure you want to delete this record?')">
 Delete
 </a>
 </td>
