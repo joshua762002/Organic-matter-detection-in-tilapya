@@ -14,19 +14,51 @@ if ($conn->connect_error) {
 
 $user_id = $_SESSION["user_id"];
 
+// Get logged in user info
 $stmt = $conn->prepare("SELECT * FROM users WHERE user_id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
-$total = $conn->query("SELECT COUNT(*) as total FROM detections")
-              ->fetch_assoc()['total'];
+// ADMIN sees all records
+if ($user['role'] == 'admin') {
 
-$high = $conn->query("SELECT COUNT(*) as high FROM detections 
-                      WHERE status='High Organic Matter'")
-              ->fetch_assoc()['high'];
+    $total = $conn->query("SELECT COUNT(*) as total FROM detections")
+                  ->fetch_assoc()['total'];
 
-$latest = $conn->query("SELECT * FROM detections ORDER BY detected_at DESC LIMIT 5");
+    $high = $conn->query("SELECT COUNT(*) as high FROM detections 
+                          WHERE status='High Organic Matter'")
+                  ->fetch_assoc()['high'];
+
+    // ✅ REMOVED LIMIT
+    $latest = $conn->query("SELECT * 
+                            FROM detections 
+                            ORDER BY detected_at DESC");
+
+} else {
+
+    // USER sees only own records
+    $stmtTotal = $conn->prepare("SELECT COUNT(*) as total FROM detections WHERE created_by = ?");
+    $stmtTotal->bind_param("i", $user_id);
+    $stmtTotal->execute();
+    $total = $stmtTotal->get_result()->fetch_assoc()['total'];
+
+    $stmtHigh = $conn->prepare("SELECT COUNT(*) as high FROM detections 
+                                WHERE status='High Organic Matter' 
+                                AND created_by = ?");
+    $stmtHigh->bind_param("i", $user_id);
+    $stmtHigh->execute();
+    $high = $stmtHigh->get_result()->fetch_assoc()['high'];
+
+    // ✅ REMOVED LIMIT
+    $stmtLatest = $conn->prepare("SELECT * 
+                                  FROM detections 
+                                  WHERE created_by = ? 
+                                  ORDER BY detected_at DESC");
+    $stmtLatest->bind_param("i", $user_id);
+    $stmtLatest->execute();
+    $latest = $stmtLatest->get_result();
+}
 ?>
 
 <!DOCTYPE html>
@@ -57,71 +89,33 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?>
 <div class="container mt-4">
 
 <?php if($user['role'] == 'admin') { ?>
-
 <h2 class="mb-4 text-danger">ADMIN DASHBOARD</h2>
-
-<div class="row mb-4">
-
-<div class="col-md-4">
-<div class="card text-white bg-primary shadow">
-<div class="card-body text-center">
-<h6>Total Samples</h6>
-<h2><?php echo $total; ?></h2>
-</div>
-</div>
-</div>
-
-<div class="col-md-4">
-<div class="card text-white bg-danger shadow">
-<div class="card-body text-center">
-<h6>High Organic Matter</h6>
-<h2><?php echo $high; ?></h2>
-</div>
-</div>
-</div>
-
-<div class="col-md-4">
-<div class="card text-white bg-dark shadow">
-<div class="card-body text-center">
-<h6>User Management</h6>
-<a href="manage_users.php" class="btn btn-light btn-sm mt-2">
-Manage Users
-</a>
-</div>
-</div>
-</div>
-
-</div>
-
 <?php } else { ?>
-
 <h2 class="mb-4 text-primary">USER DASHBOARD</h2>
-
-<div class="row mb-4">
-
-<div class="col-md-6">
-<div class="card text-white bg-primary shadow">
-<div class="card-body text-center">
-<h6>Total Samples</h6>
-<h2><?php echo $total; ?></h2>
-</div>
-</div>
-</div>
-
-<div class="col-md-6">
-<div class="card text-white bg-danger shadow">
-<div class="card-body text-center">
-<h6>High Organic Matter</h6>
-<h2><?php echo $high; ?></h2>
-</div>
-</div>
-</div>
-
-</div>
-
 <?php } ?>
 
-<!-- ADD BUTTON FOR BOTH USER & ADMIN -->
+<div class="row mb-4">
+
+<div class="col-md-6">
+<div class="card text-white bg-primary shadow">
+<div class="card-body text-center">
+<h6>Total Samples</h6>
+<h2><?php echo $total; ?></h2>
+</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="card text-white bg-danger shadow">
+<div class="card-body text-center">
+<h6>High Organic Matter</h6>
+<h2><?php echo $high; ?></h2>
+</div>
+</div>
+</div>
+
+</div>
+
 <div class="mb-3">
 <a href="add_detection.php" class="btn btn-success">
 + Add New Detection
@@ -130,10 +124,12 @@ Manage Users
 
 <div class="card shadow">
 <div class="card-header bg-success text-white">
-Latest Detection Records
+Detection Records
 </div>
 
-<div class="card-body">
+<!-- ✅ SCROLLABLE TABLE -->
+<div class="card-body" style="max-height: 400px; overflow-y: auto;">
+
 <table class="table table-hover table-bordered">
 <thead>
 <tr>
@@ -152,6 +148,8 @@ Latest Detection Records
 </thead>
 
 <tbody>
+
+<?php if($latest->num_rows > 0) { ?>
 <?php while($row = $latest->fetch_assoc()) { ?>
 <tr>
 <td><?php echo htmlspecialchars($row['sample_code']); ?></td>
@@ -183,8 +181,17 @@ Delete
 
 </tr>
 <?php } ?>
+<?php } else { ?>
+<tr>
+<td colspan="7" class="text-center text-muted">
+No detection records found.
+</td>
+</tr>
+<?php } ?>
+
 </tbody>
 </table>
+
 </div>
 </div>
 

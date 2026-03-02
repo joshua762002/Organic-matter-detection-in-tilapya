@@ -16,7 +16,7 @@ $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    // ✅ AUTO GENERATE SAMPLE CODE (SAMPLE-001, SAMPLE-002...)
+    
     $result = $conn->query("SELECT MAX(detection_id) AS last_id FROM detections");
     $row = $result->fetch_assoc();
     $next_id = ($row['last_id'] ?? 0) + 1;
@@ -72,7 +72,7 @@ Add Detection Record
 
 <form method="POST">
 
-<!-- ❌ TINANGGAL NA SAMPLE CODE INPUT (AUTO NA) -->
+
 
 <div class="mb-3">
 <label class="form-label">Organic Level</label>

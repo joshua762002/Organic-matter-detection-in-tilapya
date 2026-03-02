@@ -1,13 +1,13 @@
 <?php
 session_start();
 
-// CHECK LOGIN FIRST
+
 if (!isset($_SESSION["user_id"])) {
     header("Location: index.php");
     exit();
 }
 
-// CHECK ROLE
+
 if ($_SESSION["role"] !== "admin") {
     header("Location: dashboard.php");
     exit();
@@ -24,7 +24,7 @@ $user_id = $_SESSION["user_id"];
 $userQuery = $conn->query("SELECT * FROM users WHERE user_id = '$user_id'");
 $user = $userQuery->fetch_assoc();
 
-// Statistics
+
 $total = $conn->query("SELECT COUNT(*) as total FROM detections")
               ->fetch_assoc()['total'];
 
@@ -35,9 +35,7 @@ $high = $conn->query("SELECT COUNT(*) as high FROM detections
 $totalUsers = $conn->query("SELECT COUNT(*) as total FROM users")
                    ->fetch_assoc()['total'];
 
-/* =========================
-   JOIN ADDED HERE
-========================= */
+
 $latest = $conn->query("SELECT 
                         detections.*, 
                         users.full_name, 
@@ -45,8 +43,7 @@ $latest = $conn->query("SELECT
                         FROM detections
                         INNER JOIN users 
                         ON detections.created_by = users.user_id
-                        ORDER BY detections.detected_at DESC 
-                        LIMIT 5");
+                        ORDER BY detections.detected_at DESC");
 ?>
 
 <!DOCTYPE html>
@@ -58,7 +55,6 @@ $latest = $conn->query("SELECT
 
 <body style="background:#f4f9f9;">
 
-<!-- NAVBAR -->
 <nav class="navbar navbar-dark bg-dark">
 <div class="container-fluid">
 <span class="navbar-brand">
@@ -67,7 +63,7 @@ ADMIN PANEL - Tilapia Organic Matter Detection
 
 <div>
 <span class="text-white me-3">
-Welcome, <?php echo $user['full_name']; ?> (ADMIN)
+Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (ADMIN)
 </span>
 <a href="logout.php" class="btn btn-danger btn-sm">Logout</a>
 </div>
@@ -120,14 +116,16 @@ Manage Users
 
 </div>
 
-<!-- LATEST DETECTIONS TABLE -->
+
 
 <div class="card shadow">
 <div class="card-header bg-success text-white">
-Latest Detection Records
+All Detection Records
 </div>
 
-<div class="card-body">
+
+<div class="card-body" style="max-height: 450px; overflow-y: auto;">
+
 <table class="table table-hover table-bordered">
 <thead>
 <tr>
@@ -144,10 +142,12 @@ Latest Detection Records
 </thead>
 
 <tbody>
+
+<?php if($latest->num_rows > 0) { ?>
 <?php while($row = $latest->fetch_assoc()) { ?>
 <tr>
 
-<td><?php echo $row['sample_code']; ?></td>
+<td><?php echo htmlspecialchars($row['sample_code']); ?></td>
 <td><?php echo $row['organic_level']; ?></td>
 <td><?php echo $row['water_temperature']; ?></td>
 <td><?php echo $row['ph_level']; ?></td>
@@ -162,10 +162,8 @@ Latest Detection Records
 
 <td><?php echo $row['detected_at']; ?></td>
 
-<!-- CREATED BY -->
-<td><?php echo $row['full_name']; ?></td>
+<td><?php echo htmlspecialchars($row['full_name']); ?></td>
 
-<!-- ROLE -->
 <td>
 <?php if($row['role'] == "admin") { ?>
 <span class="badge bg-dark">ADMIN</span>
@@ -184,8 +182,17 @@ Delete
 
 </tr>
 <?php } ?>
+<?php } else { ?>
+<tr>
+<td colspan="9" class="text-center text-muted">
+No detection records found.
+</td>
+</tr>
+<?php } ?>
+
 </tbody>
 </table>
+
 </div>
 </div>
 
