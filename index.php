@@ -14,23 +14,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST["username"]);
     $password = trim($_POST["password"]);
 
-    $sql = "SELECT * FROM users WHERE username = '$username'";
-    $result = $conn->query($sql);
+    // SECURED QUERY (NO SQL INJECTION)
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
     if ($result && $result->num_rows == 1) {
 
         $user = $result->fetch_assoc();
 
+        // CHECK PASSWORD (PLAIN TEXT VERSION - for now)
         if ($user["password"] === $password) {
 
-           
+            // SET SESSION
             $_SESSION["user_id"] = $user["user_id"];
             $_SESSION["username"] = $user["username"];
             $_SESSION["role"] = $user["role"];
 
-            
-            
+            // INSERT ACTIVITY LOG
+            $action = "User logged in";
+            $logStmt = $conn->prepare("INSERT INTO activity_logs (user_id, action) VALUES (?, ?)");
+            $logStmt->bind_param("is", $user["user_id"], $action);
+            $logStmt->execute();
 
+            // REDIRECT BASED ON ROLE
             if ($user["role"] === "admin") {
                 header("Location: admin_dashboard.php");
                 exit();

@@ -1,13 +1,11 @@
 <?php
 session_start();
 
-// CHECK LOGIN
 if (!isset($_SESSION["user_id"])) {
     header("Location: index.php");
     exit();
 }
 
-// ADMIN ONLY
 if ($_SESSION["role"] !== "admin") {
     header("Location: dashboard.php");
     exit();
@@ -19,46 +17,70 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
+$message = "";
 
+/* ================= ADD USER ================= */
 if (isset($_POST["add_user"])) {
 
     $username = trim($_POST["username"]);
     $password = trim($_POST["password"]);
     $full_name = trim($_POST["full_name"]);
-    $role = isset($_POST["role"]) ? trim($_POST["role"]) : "staff";
+    $role = isset($_POST["role"]) ? strtolower(trim($_POST["role"])) : "staff";
 
-  
-    $role = strtolower($role);
-
-    
     if ($role !== "admin" && $role !== "staff") {
         $role = "staff";
     }
 
-    $check = $conn->query("SELECT * FROM users WHERE username='$username'");
+    $check = $conn->prepare("SELECT user_id FROM users WHERE username = ?");
+    $check->bind_param("s", $username);
+    $check->execute();
+    $result = $check->get_result();
 
-    if ($check && $check->num_rows == 0) {
-        $conn->query("INSERT INTO users (username,password,full_name,role)
-                      VALUES ('$username','$password','$full_name','$role')");
+    if ($result->num_rows == 0) {
+
+        $stmt = $conn->prepare("INSERT INTO users (username,password,full_name,role)
+                                VALUES (?,?,?,?)");
+        $stmt->bind_param("ssss", $username, $password, $full_name, $role);
+        $stmt->execute();
+
+        header("Location: manage_users.php?msg=added");
+        exit();
     }
 
-    header("Location: manage_users.php");
+    header("Location: manage_users.php?msg=exists");
     exit();
 }
 
+/* ================= DELETE USER ================= */
 if (isset($_GET["delete"])) {
+
     $delete_id = intval($_GET["delete"]);
 
     if ($delete_id != $_SESSION["user_id"]) {
-        $conn->query("DELETE FROM users WHERE user_id = $delete_id");
+
+        try {
+
+            $stmt = $conn->prepare("DELETE FROM users WHERE user_id = ?");
+            $stmt->bind_param("i", $delete_id);
+            $stmt->execute();
+
+            header("Location: manage_users.php?msg=deleted");
+            exit();
+
+        } catch (mysqli_sql_exception $e) {
+
+            header("Location: manage_users.php?msg=has_records");
+            exit();
+        }
     }
 
     header("Location: manage_users.php");
     exit();
 }
 
-
+/* ================= UPDATE USER ================= */
 if (isset($_POST["update_user"])) {
 
     $user_id = intval($_POST["user_id"]);
@@ -66,14 +88,38 @@ if (isset($_POST["update_user"])) {
     $full_name = $_POST["full_name"];
     $role = $_POST["role"];
 
-    $conn->query("UPDATE users 
-                  SET username='$username',
-                      full_name='$full_name',
-                      role='$role'
-                  WHERE user_id=$user_id");
+    $stmt = $conn->prepare("UPDATE users 
+                            SET username=?, full_name=?, role=?
+                            WHERE user_id=?");
+    $stmt->bind_param("sssi", $username, $full_name, $role, $user_id);
+    $stmt->execute();
 
-    header("Location: manage_users.php");
+    header("Location: manage_users.php?msg=updated");
     exit();
+}
+
+/* ================= MESSAGE DISPLAY ================= */
+if (isset($_GET["msg"])) {
+
+    if ($_GET["msg"] == "deleted") {
+        $message = "User deleted successfully.";
+    }
+
+    if ($_GET["msg"] == "has_records") {
+        $message = "Cannot delete this user because there are existing detection records.";
+    }
+
+    if ($_GET["msg"] == "added") {
+        $message = "User added successfully.";
+    }
+
+    if ($_GET["msg"] == "updated") {
+        $message = "User updated successfully.";
+    }
+
+    if ($_GET["msg"] == "exists") {
+        $message = "Username already exists.";
+    }
 }
 
 $users = $conn->query("SELECT * FROM users ORDER BY created_at DESC");
@@ -97,6 +143,11 @@ $users = $conn->query("SELECT * FROM users ORDER BY created_at DESC");
 
 <div class="container mt-4">
 
+<?php if (!empty($message)) : ?>
+<div class="alert alert-warning">
+<?php echo $message; ?>
+</div>
+<?php endif; ?>
 
 <div class="card mb-4 shadow">
 <div class="card-header bg-success text-white">
@@ -138,7 +189,6 @@ Add
 </form>
 </div>
 </div>
-
 
 <div class="card shadow">
 <div class="card-header bg-primary text-white">
