@@ -19,7 +19,7 @@ $stmt->bind_param("i",$user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
-/* USER COUNTS */
+
 
 $stmtTotal = $conn->prepare("SELECT COUNT(*) as total FROM detections WHERE created_by=?");
 $stmtTotal->bind_param("i",$user_id);
@@ -96,7 +96,7 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (USER)
 
 <h2 class="mb-4 text-primary">USER DASHBOARD</h2>
 
-<!-- CARDS -->
+
 
 <div class="row mb-4">
 
@@ -139,7 +139,7 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (USER)
 </div>
 
 
-<!-- GRAPH + INFO -->
+
 
 <div class="row mb-4">
 
@@ -186,7 +186,7 @@ Detection Actions
 </div>
 
 
-<!-- TABLE -->
+
 
 <div class="card shadow">
 
@@ -315,6 +315,11 @@ cutout:'65%'
 });
 
 </script>
+<div style="height:40px;"></div>
+
+<footer>
+   
+</footer>
 
 </body>
 </html>
