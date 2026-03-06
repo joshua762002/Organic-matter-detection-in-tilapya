@@ -114,7 +114,7 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (ADMIN)
 </div>
 
 <div class="col-md-3">
-<div class="card text-dark shadow" style="background:#f39c12;">
+<div class="card text-white" style="background:#f39c12;">
 <div class="card-body text-center">
 <h6>Moderate</h6>
 <h2><?php echo $moderate; ?></h2>
