@@ -11,11 +11,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST["username"];
     $password = $_POST["password"];
 
-    // Insert new staff account
+    
     $conn->query("INSERT INTO users (username, password, full_name, role)
                   VALUES ('$username', '$password', '$fullname', 'staff')");
 
-    // Redirect to login page
+    
     header("Location: index.php");
     exit();
 }

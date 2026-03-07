@@ -22,17 +22,17 @@ $user_id = (int)$_SESSION["user_id"];
 $userQuery = $conn->query("SELECT * FROM users WHERE user_id = $user_id");
 $user = $userQuery->fetch_assoc();
 
-/* DELETE DETECTION */
+
 if(isset($_POST['delete_id'])){
 
     $delete_id = intval($_POST['delete_id']);
 
-    /* delete alerts first to avoid foreign key error */
+    
     $stmt1 = $conn->prepare("DELETE FROM alerts WHERE detection_id=?");
     $stmt1->bind_param("i",$delete_id);
     $stmt1->execute();
 
-    /* delete detection */
+    
     $stmt2 = $conn->prepare("DELETE FROM detections WHERE detection_id=?");
     $stmt2->bind_param("i",$delete_id);
     $stmt2->execute();
@@ -40,7 +40,7 @@ if(isset($_POST['delete_id'])){
     $success = "Detection deleted successfully.";
 }
 
-/* COUNTS */
+
 
 $total = $conn->query("SELECT COUNT(*) as total FROM detections")->fetch_assoc()['total'];
 
@@ -52,7 +52,7 @@ $high = $conn->query("SELECT COUNT(*) as total FROM detections WHERE status LIKE
 
 $totalUsers = $conn->query("SELECT COUNT(*) as total FROM users")->fetch_assoc()['total'];
 
-/* ALERTS */
+
 
 $alerts = $conn->query("
 SELECT sample_code, organic_level, detected_at
@@ -61,7 +61,7 @@ WHERE status LIKE '%High%'
 ORDER BY detected_at DESC
 ");
 
-/* LATEST RECORDS */
+
 
 $latest = $conn->query("
 SELECT detections.*, users.full_name, users.role
@@ -91,7 +91,7 @@ width:260px;
 margin:auto;
 }
 
-/* ALERT SLIDER */
+
 
 .alert-container{
 overflow:hidden;
@@ -165,7 +165,7 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (ADMIN)
 <?php } ?>
 
 
-<!-- ALERT SECTION -->
+
 
 <div class="card border-danger mb-4 shadow">
 
