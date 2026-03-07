@@ -16,7 +16,6 @@ $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    
     $result = $conn->query("SELECT MAX(detection_id) AS last_id FROM detections");
     $row = $result->fetch_assoc();
     $next_id = ($row['last_id'] ?? 0) + 1;
@@ -26,10 +25,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $organic_level = $_POST["organic_level"];
     $temp = $_POST["temp"];
     $ph = $_POST["ph"];
-    $status = $_POST["status"];
     $created_by = $_SESSION["user_id"];
 
     
+
+    if ($organic_level < 3) {
+        $status = "Normal";
+    } elseif ($organic_level >= 3 && $organic_level < 6) {
+        $status = "Moderate";
+    } else {
+        $status = "High Organic Matter";
+    }
+
+   
+
+    if ($temp >= 24 && $temp <= 28) {
+        $temp_indicator = "Optimal";
+    } elseif ($temp < 24 && $temp >= 20) {
+        $temp_indicator = "Slightly Low";
+    } elseif ($temp > 28 && $temp <= 32) {
+        $temp_indicator = "Slightly High";
+    } else {
+        $temp_indicator = "Critical";
+    }
+
+    
+
+    if ($ph >= 6.5 && $ph <= 8.5) {
+        $ph_indicator = "Normal";
+    } elseif ($ph < 6.5 && $ph >= 5.5) {
+        $ph_indicator = "Acidic";
+    } elseif ($ph > 8.5 && $ph <= 9.5) {
+        $ph_indicator = "Alkaline";
+    } else {
+        $ph_indicator = "Dangerous";
+    }
+
     $stmt = $conn->prepare("INSERT INTO detections 
     (sample_code, organic_level, water_temperature, ph_level, status, detected_at, created_by)
     VALUES (?, ?, ?, ?, ?, NOW(), ?)");
@@ -46,10 +77,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt->execute()) {
 
-       
         $detection_id = $conn->insert_id;
 
-        
         if ($status == "High Organic Matter") {
 
             $alert_message = "High Organic Matter detected in $sample_code. Immediate water monitoring recommended.";
@@ -61,7 +90,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt2->execute();
         }
 
-       
         if ($status == "Moderate") {
 
             $alert_message = "Moderate Organic Matter detected in $sample_code. Monitoring recommended.";
@@ -73,13 +101,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt3->execute();
         }
 
-        $success = "Detection record added successfully! Sample Code: " . $sample_code;
+        $success = "Detection saved! Sample Code: $sample_code 
+        | Temp Status: $temp_indicator 
+        | pH Status: $ph_indicator";
     }
 }
 ?>
 
 <!DOCTYPE html>
-
 <html>
 <head>
 
@@ -90,12 +119,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <style>
 
 body{
-background:linear-gradient(135deg,#ffffff,#ffffff);
+background:linear-gradient(135deg,#eef7ff,#f7fbff);
 min-height:100vh;
 }
 
 .navbar-custom{
-background-color:#202020;
+background-color:#1f2937;
 }
 
 .navbar-custom .navbar-brand{
@@ -104,7 +133,7 @@ font-weight:bold;
 }
 
 .card-custom{
-background-color:#fcffff;
+background:white;
 border-radius:12px;
 }
 
@@ -163,18 +192,8 @@ Add Detection Record
 <input type="number" step="0.01" name="ph" class="form-control" required>
 </div>
 
-<div class="mb-3">
-<label class="form-label">Status</label>
-
-<select name="status" class="form-select" required>
-<option value="Normal">Normal</option>
-<option value="Moderate">Moderate</option>
-<option value="High Organic Matter">High Organic Matter</option>
-</select>
-
-</div>
-
-<button type="submit" class="btn btn-success">Save</button> <a href="dashboard.php" class="btn btn-secondary">Back</a>
+<button type="submit" class="btn btn-success">Save Detection</button>
+<a href="dashboard.php" class="btn btn-secondary">Back</a>
 
 </form>
 
@@ -184,3 +203,4 @@ Add Detection Record
 
 </body>
 </html>
+
