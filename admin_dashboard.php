@@ -23,16 +23,55 @@ $userQuery = $conn->query("SELECT * FROM users WHERE user_id = $user_id");
 $user = $userQuery->fetch_assoc();
 
 
+
+if(isset($_POST['add_detection'])){
+
+$organic = $_POST['organic_level'];
+$temp = $_POST['temperature'];
+$ph = $_POST['ph'];
+
+$sample = "TEMP"; 
+
+if($organic <= 30){
+$status = "Normal Organic Matter";
+}
+elseif($organic <= 70){
+$status = "Moderate Organic Matter";
+}
+else{
+$status = "High Organic Matter";
+}
+
+$stmt = $conn->prepare("INSERT INTO detections 
+(sample_code,organic_level,water_temperature,ph_level,status,created_by,detected_at) 
+VALUES (?,?,?,?,?,?,NOW())");
+
+$stmt->bind_param("sdddsi",$sample,$organic,$temp,$ph,$status,$user_id);
+
+if($stmt->execute()){
+
+$detection_id = $conn->insert_id;
+
+
+$sample_code = "SAMPLE-" . str_pad($detection_id,3,"0",STR_PAD_LEFT);
+
+$update = $conn->prepare("UPDATE detections SET sample_code=? WHERE detection_id=?");
+$update->bind_param("si",$sample_code,$detection_id);
+$update->execute();
+
+$success = "Detection record added successfully. Sample Code: $sample_code";
+
+}
+
+}
 if(isset($_POST['delete_id'])){
 
     $delete_id = intval($_POST['delete_id']);
 
-    
     $stmt1 = $conn->prepare("DELETE FROM alerts WHERE detection_id=?");
     $stmt1->bind_param("i",$delete_id);
     $stmt1->execute();
 
-    
     $stmt2 = $conn->prepare("DELETE FROM detections WHERE detection_id=?");
     $stmt2->bind_param("i",$delete_id);
     $stmt2->execute();
@@ -90,8 +129,6 @@ background:#f4f9f9;
 width:260px;
 margin:auto;
 }
-
-
 
 .alert-container{
 overflow:hidden;
@@ -163,8 +200,6 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (ADMIN)
 </div>
 
 <?php } ?>
-
-
 
 
 <div class="card border-danger mb-4 shadow">
@@ -301,8 +336,14 @@ Manage Users
 
 <div class="card shadow">
 
-<div class="card-header bg-success text-white">
-All Detection Records
+<div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+
+<span>All Detection Records</span>
+
+<button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addDetection">
+Add Detection Record
+</button>
+
 </div>
 
 <div class="card-body" style="max-height:450px; overflow-y:auto;">
@@ -413,6 +454,60 @@ No detection records found
 
 </div>
 
+
+<!-- ADD DETECTION MODAL -->
+
+<div class="modal fade" id="addDetection">
+
+<div class="modal-dialog">
+
+<div class="modal-content">
+
+<div class="modal-header bg-dark text-white">
+<h5 class="modal-title">Add Detection Record</h5>
+<button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form method="POST">
+
+<div class="modal-body">
+
+
+<div class="mb-3">
+<label>Organic Level</label>
+<input type="number" step="0.01" name="organic_level" class="form-control" required>
+</div>
+
+<div class="mb-3">
+<label>Water Temperature</label>
+<input type="number" step="0.01" name="temperature" class="form-control" required>
+</div>
+
+<div class="mb-3">
+<label>pH Level</label>
+<input type="number" step="0.01" name="ph" class="form-control" required>
+</div>
+
+</div>
+
+<div class="modal-footer">
+
+<button type="submit" name="add_detection" class="btn btn-success">
+Save Detection
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 

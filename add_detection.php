@@ -14,20 +14,19 @@ if ($conn->connect_error) {
 
 $success = "";
 
+/* GET NEXT SAMPLE CODE PREVIEW */
+$result = $conn->query("SELECT MAX(detection_id) AS last_id FROM detections");
+$row = $result->fetch_assoc();
+$next_id = ($row['last_id'] ?? 0) + 1;
+$next_sample_code = "SAMPLE-" . str_pad($next_id, 3, "0", STR_PAD_LEFT);
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    $result = $conn->query("SELECT MAX(detection_id) AS last_id FROM detections");
-    $row = $result->fetch_assoc();
-    $next_id = ($row['last_id'] ?? 0) + 1;
-
-    $sample_code = "SAMPLE-" . str_pad($next_id, 3, "0", STR_PAD_LEFT);
 
     $organic_level = $_POST["organic_level"];
     $temp = $_POST["temp"];
     $ph = $_POST["ph"];
     $created_by = $_SESSION["user_id"];
-
-    
 
     if ($organic_level < 3) {
         $status = "Normal";
@@ -36,8 +35,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $status = "High Organic Matter";
     }
-
-   
 
     if ($temp >= 24 && $temp <= 28) {
         $temp_indicator = "Optimal";
@@ -49,8 +46,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $temp_indicator = "Critical";
     }
 
-    
-
     if ($ph >= 6.5 && $ph <= 8.5) {
         $ph_indicator = "Normal";
     } elseif ($ph < 6.5 && $ph >= 5.5) {
@@ -60,6 +55,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $ph_indicator = "Dangerous";
     }
+
+    /* TEMP SAMPLE CODE */
+    $sample_code = "TEMP";
 
     $stmt = $conn->prepare("INSERT INTO detections 
     (sample_code, organic_level, water_temperature, ph_level, status, detected_at, created_by)
@@ -77,7 +75,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt->execute()) {
 
+        /* GET AUTO ID */
         $detection_id = $conn->insert_id;
+
+        /* GENERATE SAMPLE CODE */
+        $sample_code = "SAMPLE-" . str_pad($detection_id, 3, "0", STR_PAD_LEFT);
+
+        /* UPDATE SAMPLE CODE */
+        $conn->query("UPDATE detections 
+                      SET sample_code='$sample_code' 
+                      WHERE detection_id=$detection_id");
 
         if ($status == "High Organic Matter") {
 
@@ -117,7 +124,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
-
 body{
 background:linear-gradient(135deg,#eef7ff,#f7fbff);
 min-height:100vh;
@@ -136,7 +142,6 @@ font-weight:bold;
 background:white;
 border-radius:12px;
 }
-
 </style>
 
 </head>
@@ -178,6 +183,11 @@ Add Detection Record
 <form method="POST">
 
 <div class="mb-3">
+<label class="form-label">Sample Code</label>
+<input type="text" class="form-control" value="<?php echo $next_sample_code; ?>" readonly>
+</div>
+
+<div class="mb-3">
 <label class="form-label">Organic Level</label>
 <input type="number" step="0.01" name="organic_level" class="form-control" required>
 </div>
@@ -203,4 +213,3 @@ Add Detection Record
 
 </body>
 </html>
-
