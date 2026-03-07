@@ -22,18 +22,46 @@ $user_id = (int)$_SESSION["user_id"];
 $userQuery = $conn->query("SELECT * FROM users WHERE user_id = $user_id");
 $user = $userQuery->fetch_assoc();
 
+/* DELETE DETECTION */
+if(isset($_POST['delete_id'])){
+
+    $delete_id = intval($_POST['delete_id']);
+
+    /* delete alerts first to avoid foreign key error */
+    $stmt1 = $conn->prepare("DELETE FROM alerts WHERE detection_id=?");
+    $stmt1->bind_param("i",$delete_id);
+    $stmt1->execute();
+
+    /* delete detection */
+    $stmt2 = $conn->prepare("DELETE FROM detections WHERE detection_id=?");
+    $stmt2->bind_param("i",$delete_id);
+    $stmt2->execute();
+
+    $success = "Detection deleted successfully.";
+}
+
+/* COUNTS */
+
 $total = $conn->query("SELECT COUNT(*) as total FROM detections")->fetch_assoc()['total'];
 
-$normal = $conn->query("SELECT COUNT(*) as total FROM detections WHERE status LIKE '%Normal%'")
-->fetch_assoc()['total'];
+$normal = $conn->query("SELECT COUNT(*) as total FROM detections WHERE status LIKE '%Normal%'")->fetch_assoc()['total'];
 
-$moderate = $conn->query("SELECT COUNT(*) as total FROM detections WHERE status LIKE '%Moderate%'")
-->fetch_assoc()['total'];
+$moderate = $conn->query("SELECT COUNT(*) as total FROM detections WHERE status LIKE '%Moderate%'")->fetch_assoc()['total'];
 
-$high = $conn->query("SELECT COUNT(*) as total FROM detections WHERE status LIKE '%High%'")
-->fetch_assoc()['total'];
+$high = $conn->query("SELECT COUNT(*) as total FROM detections WHERE status LIKE '%High%'")->fetch_assoc()['total'];
 
 $totalUsers = $conn->query("SELECT COUNT(*) as total FROM users")->fetch_assoc()['total'];
+
+/* ALERTS */
+
+$alerts = $conn->query("
+SELECT sample_code, organic_level, detected_at
+FROM detections
+WHERE status LIKE '%High%'
+ORDER BY detected_at DESC
+");
+
+/* LATEST RECORDS */
 
 $latest = $conn->query("
 SELECT detections.*, users.full_name, users.role
@@ -59,8 +87,42 @@ background:#f4f9f9;
 }
 
 .chart-container{
-width:250px;
+width:260px;
 margin:auto;
+}
+
+/* ALERT SLIDER */
+
+.alert-container{
+overflow:hidden;
+background:#fff5f5;
+border-radius:6px;
+padding:10px;
+}
+
+.alert-slider{
+display:flex;
+gap:80px;
+animation:slideAlerts 45s linear infinite;
+}
+
+.alert-item{
+white-space:nowrap;
+color:#c0392b;
+font-weight:600;
+font-size:15px;
+}
+
+@keyframes slideAlerts{
+
+0%{
+transform:translateX(100%);
+}
+
+100%{
+transform:translateX(-100%);
+}
+
 }
 
 </style>
@@ -77,11 +139,13 @@ ADMIN PANEL - Tilapia Organic Matter Detection
 </span>
 
 <div>
+
 <span class="text-white me-3">
 Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (ADMIN)
 </span>
 
 <a href="logout.php" class="btn btn-danger btn-sm">Logout</a>
+
 </div>
 
 </div>
@@ -91,6 +155,58 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (ADMIN)
 <div class="container mt-4">
 
 <h2 class="mb-4 text-danger">ADMIN DASHBOARD</h2>
+
+<?php if(isset($success)){ ?>
+
+<div class="alert alert-success">
+<?php echo $success; ?>
+</div>
+
+<?php } ?>
+
+
+<!-- ALERT SECTION -->
+
+<div class="card border-danger mb-4 shadow">
+
+<div class="card-header bg-danger text-white">
+⚠ High Organic Matter Alerts
+</div>
+
+<div class="card-body">
+
+<div class="alert-container">
+
+<div class="alert-slider">
+
+<?php if($alerts->num_rows > 0){ ?>
+
+<?php while($alert = $alerts->fetch_assoc()){ ?>
+
+<div class="alert-item">
+
+⚠ Sample <b><?php echo $alert['sample_code']; ?></b> 
+High Organic Matter detected (Level: <?php echo $alert['organic_level']; ?>)
+
+</div>
+
+<?php } ?>
+
+<?php }else{ ?>
+
+<div class="alert-item">
+No alerts found
+</div>
+
+<?php } ?>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 
 <div class="row mb-4">
@@ -261,11 +377,15 @@ All Detection Records
 
 <td>
 
-<a href="delete_detection.php?id=<?php echo $row['detection_id']; ?>"
-class="btn btn-sm btn-danger"
-onclick="return confirm('Delete this record?');">
+<form method="POST" onsubmit="return confirm('Delete this record?');">
+
+<input type="hidden" name="delete_id" value="<?php echo $row['detection_id']; ?>">
+
+<button class="btn btn-sm btn-danger">
 Delete
-</a>
+</button>
+
+</form>
 
 </td>
 
@@ -335,11 +455,8 @@ cutout:'65%'
 });
 
 </script>
-<div style="height:40px;"></div>
 
-<footer>
-   
-</footer>
+<div style="height:40px;"></div>
 
 </body>
 </html>
