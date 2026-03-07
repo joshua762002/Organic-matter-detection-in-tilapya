@@ -1,6 +1,21 @@
 CREATE DATABASE IF NOT EXISTS organic_tilapia;
 USE organic_tilapia;
 
+CREATE TABLE admins (
+admin_id INT(11) AUTO_INCREMENT PRIMARY KEY,
+username VARCHAR(50) NOT NULL UNIQUE,
+password VARCHAR(255) NOT NULL,
+full_name VARCHAR(100),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+last_login TIMESTAMP NULL DEFAULT NULL
+);
+
+INSERT INTO admins (username, password, full_name)
+VALUES
+('admin', '1234', 'System Administrator');
+
+
+
 CREATE TABLE users (
 user_id INT AUTO_INCREMENT PRIMARY KEY,
 username VARCHAR(50) NOT NULL UNIQUE,
@@ -10,11 +25,11 @@ role ENUM('admin','staff') DEFAULT 'staff',
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
 INSERT INTO users (username, password, full_name, role)
 VALUES
 ('admin', '1234', 'System Administrator', 'admin'),
 ('staff1', '1234', 'Juan Dela Cruz', 'staff');
+
 
 
 CREATE TABLE detections (
@@ -28,7 +43,6 @@ created_by INT,
 detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (created_by) REFERENCES users(user_id)
 );
-
 
 INSERT INTO detections (sample_code, organic_level, water_temperature, ph_level, status, created_by)
 VALUES
@@ -47,10 +61,10 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (detection_id) REFERENCES detections(detection_id)
 );
 
-
 INSERT INTO alerts (detection_id, alert_message, alert_level)
 VALUES
 (2, 'High Organic Matter detected in SAMPLE-002. Water change recommended.', 'High');
+
 
 
 CREATE TABLE activity_logs (
@@ -61,10 +75,25 @@ log_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-
 INSERT INTO activity_logs (user_id, action)
 VALUES
 (1, 'Admin logged into the system'),
 (2, 'Staff logged into the system'),
 (2, 'Staff created a new detection record'),
 (1, 'Admin viewed dashboard');
+
+
+
+CREATE TABLE dashboard_logs (
+log_id INT(11) AUTO_INCREMENT PRIMARY KEY,
+admin_id INT(11),
+action TEXT,
+log_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (admin_id) REFERENCES admins(admin_id)
+);
+
+INSERT INTO dashboard_logs (admin_id, action)
+VALUES
+(1, 'Admin opened dashboard'),
+(1, 'Admin viewed detection statistics'),
+(1, 'Admin checked alerts');
