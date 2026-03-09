@@ -39,13 +39,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $logStmt->execute();
 
             // REDIRECT BASED ON ROLE
-            if ($user["role"] === "admin") {
-                header("Location: admin_dashboard.php");
-                exit();
-            } else {
-                header("Location: dashboard.php");
-                exit();
-            }
+        if ($user["role"] === "admin") {
+    header("Location: admin_dashboard.php"); // or keep admin landing page
+    exit();
+      } elseif ($user["role"] === "manager") {
+    header("Location: manager_dashboard.php");
+    exit();
+    } else {
+    header("Location: staff_dashboard.php");
+    exit();
+}
 
         } else {
             $error = "Wrong password!";

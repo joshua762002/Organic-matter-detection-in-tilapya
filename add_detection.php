@@ -155,7 +155,7 @@ Tilapia Organic Matter Detection
 </a>
 
 <div class="ms-auto me-3">
-<a href="dashboard.php" class="btn btn-light btn-sm">
+<a href="staff_dashboard.php" class="btn btn-light btn-sm">
 ⬅ Back to Dashboard
 </a>
 </div>
@@ -203,7 +203,7 @@ Add Detection Record
 </div>
 
 <button type="submit" class="btn btn-success">Save Detection</button>
-<a href="dashboard.php" class="btn btn-secondary">Back</a>
+<a href="staff_dashboard.php" class="btn btn-secondary">Back</a>
 
 </form>
 
