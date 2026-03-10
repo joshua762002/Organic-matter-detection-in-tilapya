@@ -29,7 +29,8 @@ if (isset($_POST["add_user"])) {
     $full_name = trim($_POST["full_name"]);
     $role = isset($_POST["role"]) ? strtolower(trim($_POST["role"])) : "staff";
 
-    if ($role !== "admin" && $role !== "staff") {
+    // Validate role: only admin, staff, manager allowed
+    if (!in_array($role, ["admin", "staff", "manager"])) {
         $role = "staff";
     }
 
@@ -87,6 +88,11 @@ if (isset($_POST["update_user"])) {
     $username = $_POST["username"];
     $full_name = $_POST["full_name"];
     $role = $_POST["role"];
+
+    // Validate role
+    if (!in_array($role, ["admin", "staff", "manager"])) {
+        $role = "staff";
+    }
 
     $stmt = $conn->prepare("UPDATE users 
                             SET username=?, full_name=?, role=?
@@ -149,6 +155,7 @@ $users = $conn->query("SELECT * FROM users ORDER BY created_at DESC");
 </div>
 <?php endif; ?>
 
+<!-- Add New User -->
 <div class="card mb-4 shadow">
 <div class="card-header bg-success text-white">
 Add New User
@@ -175,6 +182,7 @@ placeholder="Full Name">
 <div class="col-md-2">
 <select name="role" class="form-select">
 <option value="staff">Staff</option>
+<option value="manager">Manager</option>
 <option value="admin">Admin</option>
 </select>
 </div>
@@ -190,6 +198,7 @@ Add
 </div>
 </div>
 
+<!-- All Users Table -->
 <div class="card shadow">
 <div class="card-header bg-primary text-white">
 All Registered Users
@@ -228,26 +237,21 @@ class="form-control form-control-sm">
 
 <td>
 <select name="role" class="form-select form-select-sm">
-<option value="admin"
-<?php if($row["role"]=="admin") echo "selected"; ?>>
-Admin</option>
-
-<option value="staff"
-<?php if($row["role"]=="staff") echo "selected"; ?>>
-Staff</option>
+<option value="admin" <?php if($row["role"]=="admin") echo "selected"; ?>>Admin</option>
+<option value="manager" <?php if($row["role"]=="manager") echo "selected"; ?>>Manager</option>
+<option value="staff" <?php if($row["role"]=="staff") echo "selected"; ?>>Staff</option>
 </select>
 </td>
 
 <td><?php echo $row["created_at"]; ?></td>
 
 <td>
-
 <input type="hidden" name="user_id"
 value="<?php echo $row["user_id"]; ?>">
 
 <button type="submit"
 name="update_user"
-class="btn btn-sm btn-success">
+class="btn btn-sm btn-success mb-1">
 Update
 </button>
 

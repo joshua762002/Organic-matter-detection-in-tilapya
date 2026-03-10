@@ -17,7 +17,7 @@ CREATE TABLE users (
     last_login TIMESTAMP NULL
 );
 
--- Sample users
+--
 INSERT INTO users (username, password, full_name, role)
 VALUES
 ('admin', '1234', 'System Administrator', 'admin'),
@@ -25,9 +25,7 @@ VALUES
 ('staff1', '1234', 'Juan Dela Cruz', 'staff'),
 ('staff2', '1234', 'Pedro Reyes', 'staff');
 
--- ===============================
--- PONDS TABLE (for Map Simulation)
--- ===============================
+
 CREATE TABLE ponds (
     pond_id INT AUTO_INCREMENT PRIMARY KEY,
     pond_name VARCHAR(50),
@@ -38,16 +36,14 @@ CREATE TABLE ponds (
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Sample ponds (simulated coordinates)
+
 INSERT INTO ponds (pond_name, latitude, longitude, status, last_reading)
 VALUES
 ('Pond A', 14.657000, 120.986000, 'Safe', 35.5),
 ('Pond B', 14.659000, 120.990000, 'High', 78.2),
 ('Pond C', 14.661000, 120.992000, 'Moderate', 45.1);
 
--- ===============================
--- DETECTIONS TABLE
--- ===============================
+
 CREATE TABLE detections (
     detection_id INT AUTO_INCREMENT PRIMARY KEY,
     pond_id INT,
@@ -62,16 +58,14 @@ CREATE TABLE detections (
     FOREIGN KEY (created_by) REFERENCES users(user_id)
 );
 
--- Sample detection records
+
 INSERT INTO detections (pond_id, sample_code, organic_level, water_temperature, ph_level, status, created_by)
 VALUES
 (1, 'SAMPLE-001', 35.50, 28.4, 7.5, 'Safe', 3),
 (2, 'SAMPLE-002', 78.20, 30.1, 6.8, 'High', 4),
 (3, 'SAMPLE-003', 45.10, 27.9, 7.2, 'Moderate', 3);
 
--- ===============================
--- ALERTS TABLE
--- ===============================
+
 CREATE TABLE alerts (
     alert_id INT AUTO_INCREMENT PRIMARY KEY,
     detection_id INT NOT NULL,
@@ -86,9 +80,7 @@ INSERT INTO alerts (detection_id, alert_message, alert_level)
 VALUES
 (2, 'High Organic Matter detected in SAMPLE-002. Water change recommended.', 'High');
 
--- ===============================
--- ACTIVITY LOGS TABLE
--- ===============================
+
 CREATE TABLE activity_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -98,7 +90,7 @@ CREATE TABLE activity_logs (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- Sample activity logs
+
 INSERT INTO activity_logs (user_id, role, action)
 VALUES
 (1, 'admin', 'Admin logged into the system'),
@@ -106,3 +98,13 @@ VALUES
 (3, 'staff', 'Staff created a new detection record'),
 (1, 'admin', 'Admin viewed dashboard'),
 (2, 'manager', 'Manager viewed pond map and status');
+
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    manager_id INT NOT NULL,
+    sample_code VARCHAR(50) NOT NULL,
+    pond_name VARCHAR(100) NOT NULL,
+    organic_level FLOAT NOT NULL,
+    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES users(user_id)
+);
