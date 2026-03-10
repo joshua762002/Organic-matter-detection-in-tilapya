@@ -2,35 +2,53 @@
 session_start();
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success'=>false,'msg'=>'Invalid request']);
-    exit;
+if(!isset($_SESSION['user_id'])){
+    echo json_encode(['status'=>'error','message'=>'Not logged in']);
+    exit();
 }
 
-$conn = new mysqli("localhost", "root", "", "organic_tilapia");
-if ($conn->connect_error) {
-    echo json_encode(['success'=>false,'msg'=>'DB connection failed']);
-    exit;
+$conn = new mysqli("localhost","root","","organic_tilapia");
+if($conn->connect_error){
+    echo json_encode(['status'=>'error','message'=>$conn->connect_error]);
+    exit();
 }
 
-// Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
-$manager_id = (int)$input['manager_id'];
-$highPonds = $input['highPonds'] ?? [];
-
-if(empty($highPonds)){
-    echo json_encode(['success'=>false,'msg'=>'No high data']);
-    exit;
+$data = json_decode(file_get_contents('php://input'), true);
+if(!$data || !isset($data['highPonds'])){
+    echo json_encode(['status'=>'error','message'=>'Invalid request']);
+    exit();
 }
 
-$stmt = $conn->prepare("INSERT INTO notifications (manager_id, sample_code, pond_name, organic_level) VALUES (?,?,?,?)");
+// Map sample codes to pond IDs (adjust based on your pond table)
+$pondMappingIDs = [
+    "SAMPLE-101"=>1,
+    "SAMPLE-102"=>2,
+    "SAMPLE-103"=>3,
+    "SAMPLE-104"=>4,
+    "SAMPLE-105"=>5,
+    "SAMPLE-106"=>6
+];
+
+$highPonds = $data['highPonds'];
+$stmt = $conn->prepare("INSERT INTO admin_notifications (pond_id,sample_code,organic_level,water_temperature,ph_level,status,created_by,detected_at) VALUES (?,?,?,?,?,?,?,?)");
 
 foreach($highPonds as $p){
-    $stmt->bind_param("issi", $manager_id, $p['sample_code'], $p['pond_name'], $p['organic_level']);
+    $pond_id = $pondMappingIDs[$p['sample_code']] ?? null;
+    if(!$pond_id) continue;
+
+    $stmt->bind_param(
+        "isdddssi",
+        $pond_id,
+        $p['sample_code'],
+        $p['organic_level'],
+        $p['water_temperature'],
+        $p['ph_level'],
+        $p['status'],
+        $_SESSION['user_id'],
+        $p['detected_at']
+    );
     $stmt->execute();
 }
 
 $stmt->close();
-$conn->close();
-
-echo json_encode(['success'=>true]);
+echo json_encode(['status'=>'success','message'=>'Notifications sent']);

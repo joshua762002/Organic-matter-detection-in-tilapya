@@ -108,3 +108,14 @@ CREATE TABLE IF NOT EXISTS notifications (
     sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES users(user_id)
 );
+
+
+CREATE TABLE admin_notifications (
+    detection_id INT(11) NOT NULL AUTO_INCREMENT,
+    pond_id INT(11),
+    sample_code VARCHAR(50) NOT NULL,
+    organic_level DECIMAL(5,2) NOT NULL,
+    status ENUM('Safe','Moderate','High'),
+    detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (detection_id)
+);
