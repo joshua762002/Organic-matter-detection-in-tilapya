@@ -14,12 +14,15 @@ if($conn->connect_error){
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
-if(!$data || !isset($data['highPonds'])){
-    echo json_encode(['status'=>'error','message'=>'Invalid request']);
+if(!$data){
+    echo json_encode(['status'=>'error','message'=>'No data received']);
     exit();
 }
 
-// Map sample codes to pond IDs (adjust based on your pond table)
+// If using highPonds key from JS
+$highPonds = $data['highPonds'] ?? $data;
+
+// Map sample codes to pond IDs (adjust based on your table)
 $pondMappingIDs = [
     "SAMPLE-101"=>1,
     "SAMPLE-102"=>2,
@@ -29,15 +32,19 @@ $pondMappingIDs = [
     "SAMPLE-106"=>6
 ];
 
-$highPonds = $data['highPonds'];
-$stmt = $conn->prepare("INSERT INTO admin_notifications (pond_id,sample_code,organic_level,water_temperature,ph_level,status,created_by,detected_at) VALUES (?,?,?,?,?,?,?,?)");
+// Prepare statement for admin_notifications
+$stmt = $conn->prepare("INSERT INTO admin_notifications 
+    (pond_id, sample_code, organic_level, water_temperature, ph_level, status, created_by, detected_at)
+    VALUES (?,?,?,?,?,?,?,?)"
+);
 
 foreach($highPonds as $p){
     $pond_id = $pondMappingIDs[$p['sample_code']] ?? null;
     if(!$pond_id) continue;
 
+    // Bind params: i=integer, s=string, d=double
     $stmt->bind_param(
-        "isdddssi",
+        "isddsssi", 
         $pond_id,
         $p['sample_code'],
         $p['organic_level'],
@@ -45,10 +52,14 @@ foreach($highPonds as $p){
         $p['ph_level'],
         $p['status'],
         $_SESSION['user_id'],
-        $p['detected_at']
+        $p['detected_at']  // should be string
     );
+
     $stmt->execute();
 }
 
 $stmt->close();
-echo json_encode(['status'=>'success','message'=>'Notifications sent']);
+$conn->close();
+
+echo json_encode(['success'=>true]);
+?>

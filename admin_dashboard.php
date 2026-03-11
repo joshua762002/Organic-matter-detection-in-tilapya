@@ -27,7 +27,7 @@ LIMIT 10
    ORIGINAL SIMULATION CODE
 ================================ */
 $pondMapping = [
-    "SAMPLE-101"=>"Pond A",
+    "SAMPLE-101"=>"Pond A", 
     "SAMPLE-102"=>"Pond B",
     "SAMPLE-103"=>"Pond C",
     "SAMPLE-104"=>"Pond D",
@@ -36,8 +36,12 @@ $pondMapping = [
 ];
 
 $defaultStaff = [
-    "SAMPLE-103"=>"Juan Dela Cruz",
-    "SAMPLE-105"=>"Pedro Reyes"
+    "SAMPLE-101"=>"Juan Dela Cruz",
+    "SAMPLE-102"=>"Pedro Reyes",
+    "SAMPLE-103"=>"Linda walker",
+    "SAMPLE-104"=>"Coco martin",
+    "SAMPLE-105"=>"JACOBA SANTOS",
+    "SAMPLE-106"=>"Maria Santos",
 ];
 
 $latestDetections = [];
@@ -94,7 +98,7 @@ body{background:#f4f9f9;}
 </nav>
 
 <div class="container mt-4">
-<h2 class="mb-4 text-primary">Tilapia Organic Matter Simulation</h2>
+<h2 class="mb-4 text-primary">Tilapia Organic Matter </h2>
 
 <!-- MANAGER NOTIFICATIONS -->
 <div class="card border-warning mb-4 shadow">
@@ -114,22 +118,28 @@ body{background:#f4f9f9;}
 <tbody>
 <?php
 if($notifications && $notifications->num_rows>0){
-while($n=$notifications->fetch_assoc()){
+    while($n=$notifications->fetch_assoc()){
+        // Determine badge color based on status
+        $status = $n['status'];
+        if($status == 'High') $color = 'bg-danger';
+        elseif($status == 'Moderate') $color = 'text-dark" style="background:#f39c12';
+        else $color = 'bg-success';
 ?>
 <tr>
-<td><?php echo $n['sample_code']; ?></td>
-<td><?php echo $n['organic_level']; ?></td>
-<td><?php echo $n['water_temperature']; ?></td>
-<td><?php echo $n['ph_level']; ?></td>
-<td><span class="badge bg-danger"><?php echo $n['status']; ?></span></td>
-<td><?php echo $n['detected_at']; ?></td>
+    <td><?php echo $n['sample_code']; ?></td>
+    <td><?php echo $n['organic_level']; ?></td>
+    <td><?php echo $n['water_temperature']; ?></td>
+    <td><?php echo $n['ph_level']; ?></td>
+    <td><span class="badge <?php echo $color; ?>"><?php echo $status; ?></span></td>
+    <td><?php echo $n['detected_at']; ?></td>
 </tr>
 <?php
-}
+    }
 }else{
-echo "<tr><td colspan='6'>No notifications yet</td></tr>";
+    echo "<tr><td colspan='6'>No notifications yet</td></tr>";
 }
 ?>
+</tbody>
 </tbody>
 </table>
 </div>

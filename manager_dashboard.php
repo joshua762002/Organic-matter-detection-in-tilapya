@@ -27,8 +27,12 @@ $pondMapping = [
 
 // Default staff
 $defaultStaff = [
-    "SAMPLE-103" => "Juan Dela Cruz",
-    "SAMPLE-105" => "Pedro Reyes"
+    "SAMPLE-101"=>"Juan Dela Cruz",
+    "SAMPLE-102"=>"Pedro Reyes",
+    "SAMPLE-103"=>"Linda walker",
+    "SAMPLE-104"=>"Coco martin",
+    "SAMPLE-105"=>"JACOBA SANTOS",
+    "SAMPLE-106"=>"Maria Santos",
 ];
 
 // Initial simulation data
