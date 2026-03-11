@@ -117,7 +117,7 @@ body{background:#f4f9f9;}
           <td><?php echo htmlspecialchars($n['detected_at']); ?></td>
           <td>
             <?php if(!$n['is_read']){ ?>
-              <button class="btn btn-sm btn-success" onclick="markAsRead(<?php echo $n['id']; ?>)">Mark as Read</button>
+              <button class="btn btn-sm btn-success" onclick="markAsRead(<?php echo $n['id']; ?>, this)">Mark as Read</button>
             <?php } else { echo "Read"; } ?>
           </td>
         </tr>
@@ -132,7 +132,7 @@ body{background:#f4f9f9;}
 </div>
 
 <script>
-function markAsRead(id){
+function markAsRead(id, btn){
   fetch('mark_as_read.php', {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
@@ -140,12 +140,21 @@ function markAsRead(id){
   })
   .then(res=>res.json())
   .then(data=>{
-    if(data.success) location.reload();
-    else alert('Failed to mark as read');
+    if(data.success){
+      // Update row without reloading
+      let row = btn.closest('tr');
+      row.style.fontWeight = 'normal';
+      let statusCell = row.querySelector('td:nth-child(2)');
+      if(statusCell.textContent.trim() === 'High') {
+        statusCell.innerHTML = '<span class="badge bg-danger">High</span>';
+      }
+      btn.replaceWith(document.createTextNode('Read'));
+    } else {
+      alert('Failed to mark as read');
+    }
   });
 }
 </script>
-
 <!-- HIGH ALERTS -->
 <div class="card border-danger mb-4 shadow">
 <div class="card-header bg-danger text-white">⚠ High Organic Matter Alerts</div>
