@@ -131,7 +131,6 @@ body{background:#f4f9f9;}
   </div>
 </div>
 
-<!-- MARK AS READ SCRIPT -->
 <script>
 function markAsRead(id){
   fetch('mark_as_read.php', {
@@ -141,11 +140,8 @@ function markAsRead(id){
   })
   .then(res=>res.json())
   .then(data=>{
-    if(data.success){
-      location.reload(); // refresh para makita effect
-    } else {
-      alert('Failed to mark as read');
-    }
+    if(data.success) location.reload();
+    else alert('Failed to mark as read');
   });
 }
 </script>
@@ -171,12 +167,40 @@ if(!$hasAlert) echo '<div class="alert-item">No alerts found</div>';
 </div>
 </div>
 
-<!-- DASHBOARD CARDS -->
+<!-- DASHBOARD CARDS WITH IDs FOR DYNAMIC UPDATE -->
 <div class="row mb-4">
-<div class="col-md-3"><div class="card text-white bg-primary shadow"><div class="card-body text-center"><h6>Total Samples</h6><h2><?php echo $total; ?></h2></div></div></div>
-<div class="col-md-3"><div class="card text-white bg-success shadow"><div class="card-body text-center"><h6>Safe</h6><h2><?php echo $safe; ?></h2></div></div></div>
-<div class="col-md-3"><div class="card text-white" style="background:#f39c12;"><div class="card-body text-center"><h6>Moderate</h6><h2><?php echo $moderate; ?></h2></div></div></div>
-<div class="col-md-3"><div class="card text-white bg-danger shadow"><div class="card-body text-center"><h6>High</h6><h2><?php echo $high; ?></h2></div></div></div>
+<div class="col-md-3">
+  <div class="card text-white bg-primary shadow">
+    <div class="card-body text-center">
+      <h6>Total Samples</h6>
+      <h2 id="total-samples"><?php echo $total; ?></h2>
+    </div>
+  </div>
+</div>
+<div class="col-md-3">
+  <div class="card text-white bg-success shadow">
+    <div class="card-body text-center">
+      <h6>Safe</h6>
+      <h2 id="total-safe"><?php echo $safe; ?></h2>
+    </div>
+  </div>
+</div>
+<div class="col-md-3">
+  <div class="card text-white" style="background:#f39c12;">
+    <div class="card-body text-center">
+      <h6>Moderate</h6>
+      <h2 id="total-moderate"><?php echo $moderate; ?></h2>
+    </div>
+  </div>
+</div>
+<div class="col-md-3">
+  <div class="card text-white bg-danger shadow">
+    <div class="card-body text-center">
+      <h6>High</h6>
+      <h2 id="total-high"><?php echo $high; ?></h2>
+    </div>
+  </div>
+</div>
 </div>
 
 <!-- MAP / CHART / SYSTEM -->
@@ -236,18 +260,23 @@ let organicChart = new Chart(ctx,{
     options:{plugins:{legend:{position:'bottom'}},cutout:'65%'}
 });
 
+// UPDATED: Dashboard + Table + Map + Cards all in sync
 function updateDashboard(){
     let safe=0, moderate=0, high=0;
     let alertHTML="", tableHTML="";
     ponds.forEach(p=>{
         simulateDetection(p);
+
         if(p.status=="High") high++;
         else if(p.status=="Moderate") moderate++;
         else safe++;
+
         if(p.status=="High") alertHTML += `<div class="alert-item">⚠ Sample <b>${p.sample_code}</b> from <b>${p.pond_name}</b> detected HIGH Organic Matter (Level: ${p.organic_level})</div>`;
+
         let badge = p.status=="High"?'<span class="badge bg-danger">High</span>':
                     p.status=="Moderate"?'<span class="badge text-dark" style="background:#f39c12;">Moderate</span>':
                     '<span class="badge bg-success">Safe</span>';
+
         tableHTML += `<tr>
             <td>${p.full_name}</td>
             <td>${p.pond_name}</td>
@@ -258,10 +287,20 @@ function updateDashboard(){
             <td>${badge}</td>
             <td>${p.detected_at}</td>
         </tr>`;
+
+        // Map markers
         if(markers[p.sample_code]) markers[p.sample_code].setStyle({color:statusColor(p.status), fillColor:statusColor(p.status)});
         else markers[p.sample_code]=L.circleMarker([8.4825+Math.random()*0.001,124.8252+Math.random()*0.001],{radius:10,color:statusColor(p.status),fillColor:statusColor(p.status),fillOpacity:0.8}).addTo(map);
         markers[p.sample_code].bindPopup(`<b>${p.pond_name}</b><br>Sample: ${p.sample_code}<br>Status: ${p.status}`);
     });
+
+    // Update cards dynamically
+    document.getElementById('total-samples').textContent = ponds.length;
+    document.getElementById('total-safe').textContent = safe;
+    document.getElementById('total-moderate').textContent = moderate;
+    document.getElementById('total-high').textContent = high;
+
+    // Update alerts + table + chart
     document.getElementById('alert-slider').innerHTML = alertHTML || '<div class="alert-item">No alerts</div>';
     document.getElementById('detections-tbody').innerHTML = tableHTML;
     organicChart.data.datasets[0].data=[safe,moderate,high];
