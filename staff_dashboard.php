@@ -20,13 +20,29 @@ $stmt->bind_param("i",$user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
-// Total detections for this staff
+// Handle simulation form submission
+if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simulate_detection'])) {
+    $sample_code = $_POST['sample_code'];
+    $organic = floatval($_POST['organic_level']);
+    $temp = floatval($_POST['water_temperature']);
+    $ph = floatval($_POST['ph_level']);
+
+    // Determine status
+    if($organic < 50) $status = 'Safe';
+    elseif($organic < 80) $status = 'Moderate';
+    else $status = 'High';
+
+    $stmtInsert = $conn->prepare("INSERT INTO detections (sample_code, organic_level, water_temperature, ph_level, status, created_by, detected_at) VALUES (?,?,?,?,?,?,NOW())");
+    $stmtInsert->bind_param("sddssi", $sample_code, $organic, $temp, $ph, $status, $user_id);
+    $stmtInsert->execute();
+}
+
+// Refresh stats after insertion
 $stmtTotal = $conn->prepare("SELECT COUNT(*) as total FROM detections WHERE created_by=?");
 $stmtTotal->bind_param("i",$user_id);
 $stmtTotal->execute();
 $total = $stmtTotal->get_result()->fetch_assoc()['total'];
 
-// Count by status (updated for ENUM: Safe, Moderate, High)
 $stmtSafe = $conn->prepare("SELECT COUNT(*) as total FROM detections WHERE status='Safe' AND created_by=?");
 $stmtSafe->bind_param("i",$user_id);
 $stmtSafe->execute();
@@ -42,7 +58,7 @@ $stmtHigh->bind_param("i",$user_id);
 $stmtHigh->execute();
 $high = $stmtHigh->get_result()->fetch_assoc()['total'];
 
-// Latest detections for this staff
+// Latest detections
 $stmtLatest = $conn->prepare("SELECT * FROM detections WHERE created_by=? ORDER BY detected_at DESC");
 $stmtLatest->bind_param("i",$user_id);
 $stmtLatest->execute();
@@ -55,25 +71,16 @@ $latest = $stmtLatest->get_result();
 <title>Staff Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
-body{
-background:#f4f9f9;
-}
-.chart-container{
-width:260px;
-margin:auto;
-}
+body{ background:#f4f9f9; }
+.chart-container{ width:260px; margin:auto; }
 </style>
-
 </head>
 <body>
 
 <nav class="navbar navbar-dark bg-dark">
 <div class="container-fluid">
-<span class="navbar-brand">
-Tilapia Organic Matter Detection
-</span>
+<span class="navbar-brand">Tilapia Organic Matter Detection</span>
 <div>
 <span class="text-white me-3">
 Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (<?php echo ucfirst($user['role']); ?>)
@@ -84,10 +91,9 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (<?php echo ucfirst
 </nav>
 
 <div class="container mt-4">
-<h2 class="mb-4 text-primary">STAFF DASHBOARD</h2>
+<h2 class="mb-4 text-primary">STAFF DASHBOARD (Simulation Mode)</h2>
 
 <div class="row mb-4">
-
 <div class="col-md-3">
 <div class="card text-white bg-primary shadow">
 <div class="card-body text-center">
@@ -96,7 +102,6 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (<?php echo ucfirst
 </div>
 </div>
 </div>
-
 <div class="col-md-3">
 <div class="card text-white bg-success shadow">
 <div class="card-body text-center">
@@ -105,7 +110,6 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (<?php echo ucfirst
 </div>
 </div>
 </div>
-
 <div class="col-md-3">
 <div class="card text-white shadow" style="background:#f39c12;">
 <div class="card-body text-center">
@@ -114,7 +118,6 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (<?php echo ucfirst
 </div>
 </div>
 </div>
-
 <div class="col-md-3">
 <div class="card text-white bg-danger shadow">
 <div class="card-body text-center">
@@ -123,16 +126,12 @@ Welcome, <?php echo htmlspecialchars($user['full_name']); ?> (<?php echo ucfirst
 </div>
 </div>
 </div>
-
 </div>
 
 <div class="row mb-4">
-
 <div class="col-md-6">
 <div class="card shadow">
-<div class="card-header bg-dark text-white">
-Organic Matter Statistics
-</div>
+<div class="card-header bg-dark text-white">Organic Matter Statistics</div>
 <div class="card-body text-center">
 <div class="chart-container">
 <canvas id="organicChart"></canvas>
@@ -143,23 +142,30 @@ Organic Matter Statistics
 
 <div class="col-md-6">
 <div class="card shadow">
-<div class="card-header bg-primary text-white">
-Detection Actions
+<div class="card-header bg-primary text-white">Simulate Detection</div>
+<div class="card-body">
+<form method="POST">
+<div class="mb-2">
+<input type="text" name="sample_code" class="form-control" placeholder="Sample Code" required>
 </div>
-<div class="card-body text-center">
-<a href="add_detection.php" class="btn btn-success">
-+ Add New Detection
-</a>
+<div class="mb-2">
+<input type="number" name="organic_level" class="form-control" placeholder="Organic Level" required>
+</div>
+<div class="mb-2">
+<input type="number" name="water_temperature" class="form-control" placeholder="Water Temp °C" required>
+</div>
+<div class="mb-2">
+<input type="number" step="0.1" name="ph_level" class="form-control" placeholder="pH Level" required>
+</div>
+<button type="submit" name="simulate_detection" class="btn btn-success w-100">Add Simulated Detection</button>
+</form>
 </div>
 </div>
 </div>
-
 </div>
 
 <div class="card shadow">
-<div class="card-header bg-success text-white">
-Your Detection Records
-</div>
+<div class="card-header bg-success text-white">Your Detection Records</div>
 <div class="card-body" style="max-height:450px; overflow-y:auto;">
 <table class="table table-hover table-bordered">
 <thead>
@@ -173,7 +179,6 @@ Your Detection Records
 </tr>
 </thead>
 <tbody>
-
 <?php if($latest->num_rows > 0){ ?>
 <?php while($row = $latest->fetch_assoc()){ ?>
 <tr>
@@ -195,12 +200,9 @@ Your Detection Records
 <?php } ?>
 <?php }else{ ?>
 <tr>
-<td colspan="6" class="text-center text-muted">
-No records found
-</td>
+<td colspan="6" class="text-center text-muted">No records found</td>
 </tr>
 <?php } ?>
-
 </tbody>
 </table>
 </div>
@@ -215,26 +217,14 @@ type:'doughnut',
 data:{
 labels:['Safe','Moderate','High'],
 datasets:[{
-data:[
-<?php echo $safe ?>,
-<?php echo $moderate ?>,
-<?php echo $high ?>
-],
-backgroundColor:[
-'#2ecc71',
-'#f39c12',
-'#e74c3c'
-],
+data:[<?php echo $safe ?>,<?php echo $moderate ?>,<?php echo $high ?>],
+backgroundColor:['#2ecc71','#f39c12','#e74c3c'],
 borderWidth:2
 }]
 },
 options:{
 responsive:true,
-plugins:{
-legend:{
-position:'bottom'
-}
-},
+plugins:{legend:{position:'bottom'}},
 cutout:'65%'
 }
 });
@@ -242,6 +232,5 @@ cutout:'65%'
 
 <div style="height:40px;"></div>
 <footer></footer>
-
 </body>
 </html>
