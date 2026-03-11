@@ -73,7 +73,7 @@ CREATE TABLE alerts (
     FOREIGN KEY (detection_id) REFERENCES detections(detection_id)
 );
 
--- Sample alerts
+
 INSERT INTO alerts (detection_id, alert_message, alert_level)
 VALUES
 (2, 'High Organic Matter detected in SAMPLE-002. Water change recommended.', 'High');
@@ -97,24 +97,19 @@ VALUES
 (1, 'admin', 'Admin viewed dashboard'),
 (2, 'manager', 'Manager viewed pond map and status');
 
-CREATE TABLE IF NOT EXISTS notifications (
-    notification_id INT AUTO_INCREMENT PRIMARY KEY,
-    manager_id INT NOT NULL,
-    sample_code VARCHAR(50) NOT NULL,
-    pond_name VARCHAR(100) NOT NULL,
-    organic_level FLOAT NOT NULL,
-    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (manager_id) REFERENCES users(user_id)
-);
+
 
 CREATE TABLE admin_notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sample_code VARCHAR(50) NOT NULL,
+    full_name VARCHAR(100),       -- added to match ERD
+    pond_name VARCHAR(50),        -- added to match ERD
     organic_level FLOAT,
     water_temperature FLOAT,
     ph_level FLOAT,
     status VARCHAR(20) NOT NULL,
     detected_at DATETIME NOT NULL,
     created_by INT,
-    is_read TINYINT(1) DEFAULT 0
+    is_read TINYINT(1) DEFAULT 0,
+    FOREIGN KEY (created_by) REFERENCES users(user_id)
 );
