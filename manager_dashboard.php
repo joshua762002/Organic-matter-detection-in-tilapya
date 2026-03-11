@@ -206,16 +206,17 @@ function updateDashboard(){
                     p.status=="Moderate"?'<span class="badge text-dark" style="background:#f39c12;">Moderate</span>':
                     '<span class="badge bg-success">Safe</span>';
 
-        tableHTML += `<tr>
-            <td>${p.full_name}</td>
-            <td>${p.pond_name}</td>
-            <td>${p.sample_code}</td>
-            <td>${p.organic_level}</td>
-            <td>${p.water_temperature}</td>
-            <td>${p.ph_level}</td>
-            <td>${badge}</td>
-            <td>${p.detected_at}</td>
-        </tr>`;
+        // Inside updateDashboard() when building tableHTML
+                tableHTML += `<tr>
+                    <td>${p.full_name}</td>
+                    <td>${p.pond_name}</td>
+                    <td>${p.sample_code}</td>
+                    <td>${p.organic_level}</td>
+                    <td>${p.water_temperature}</td>
+                    <td>${p.ph_level}</td>
+                    <td>${badge}</td>
+                    <td>${p.detected_at}</td>
+                </tr>`;
 
         if(markers[p.sample_code]) markers[p.sample_code].setStyle({color:statusColor(p.status), fillColor:statusColor(p.status)});
         else markers[p.sample_code] = L.circleMarker([8.4825 + Math.random()*0.001,124.8252 + Math.random()*0.001], { radius:10, color:statusColor(p.status), fillColor:statusColor(p.status), fillOpacity:0.8 }).addTo(map);

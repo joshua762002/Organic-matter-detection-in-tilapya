@@ -12,9 +12,6 @@ $user = $userQuery->fetch_assoc();
 /* HIGH NOTIFICATIONS ONLY */
 $notifications = $conn->query("SELECT * FROM admin_notifications ORDER BY detected_at DESC LIMIT 20");
 
-/* ================================
-   ORIGINAL SIMULATION CODE
-================================ */
 $pondMapping = [
     "SAMPLE-101"=>"Pond A", 
     "SAMPLE-102"=>"Pond B",
@@ -71,7 +68,7 @@ body{background:#f4f9f9;}
 .alert-container{overflow:hidden;background:#fff5f5;border-radius:6px;padding:10px;}
 .alert-slider{display:flex;gap:80px;animation:slideAlerts 45s linear infinite;}
 .alert-item{white-space:nowrap;color:#c0392b;font-weight:600;font-size:15px;}
-@keyframes slideAlerts{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}
+@keyframes slideAlerts{0%{transform:translateX(100%);}100%{transform:translateX(-100%);} }
 #map{height:350px;border-radius:6px;}
 </style>
 </head>
@@ -96,6 +93,8 @@ body{background:#f4f9f9;}
     <table class="table table-bordered table-sm">
       <thead>
         <tr>
+          <th>Staff Name</th>
+          <th>Pond</th>
           <th>Sample</th>
           <th>Status</th>
           <th>Date</th>
@@ -103,29 +102,31 @@ body{background:#f4f9f9;}
         </tr>
       </thead>
       <tbody>
-        <?php
-        if($notifications && $notifications->num_rows > 0){
-            while($n = $notifications->fetch_assoc()){ ?>
-        <tr style="<?php echo $n['is_read'] ? '' : 'font-weight:bold;'; ?>">
-          <td><?php echo htmlspecialchars($n['sample_code']); ?></td>
-          <td>
-            <?php 
-            if($n['status']=='High') echo "<span class='badge bg-danger'>High</span>"; 
-            else echo htmlspecialchars($n['status']); 
-            ?>
-          </td>
-          <td><?php echo htmlspecialchars($n['detected_at']); ?></td>
-          <td>
-            <?php if(!$n['is_read']){ ?>
-              <button class="btn btn-sm btn-success" onclick="markAsRead(<?php echo $n['id']; ?>, this)">Mark as Read</button>
-            <?php } else { echo "Read"; } ?>
-          </td>
-        </tr>
-        <?php
-            }
-        } else { ?>
-        <tr><td colspan="4">No notifications</td></tr>
-        <?php } ?>
+<?php
+if($notifications && $notifications->num_rows > 0){
+    while($n = $notifications->fetch_assoc()){ ?>
+<tr style="<?php echo $n['is_read'] ? '' : 'font-weight:bold;'; ?>">
+  <td><?php echo htmlspecialchars($n['full_name'] ?? 'Staff'); ?></td>
+  <td><?php echo htmlspecialchars($n['pond_name'] ?? 'Pond'); ?></td>
+  <td><?php echo htmlspecialchars($n['sample_code']); ?></td>
+  <td>
+    <?php 
+    if($n['status']=='High') echo "<span class='badge bg-danger'>High</span>"; 
+    else echo htmlspecialchars($n['status']); 
+    ?>
+  </td>
+  <td><?php echo htmlspecialchars($n['detected_at']); ?></td>
+  <td>
+    <?php if(!$n['is_read']){ ?>
+      <button class="btn btn-sm btn-success" onclick="markAsRead(<?php echo $n['id']; ?>, this)">Mark as Read</button>
+    <?php } else { echo "Read"; } ?>
+  </td>
+</tr>
+<?php
+    }
+} else { ?>
+<tr><td colspan="6">No notifications</td></tr>
+<?php } ?>
       </tbody>
     </table>
   </div>
@@ -141,20 +142,16 @@ function markAsRead(id, btn){
   .then(res=>res.json())
   .then(data=>{
     if(data.success){
-      // Update row without reloading
       let row = btn.closest('tr');
-      row.style.fontWeight = 'normal';
-      let statusCell = row.querySelector('td:nth-child(2)');
-      if(statusCell.textContent.trim() === 'High') {
-        statusCell.innerHTML = '<span class="badge bg-danger">High</span>';
-      }
+      row.style.fontWeight='normal';
       btn.replaceWith(document.createTextNode('Read'));
-    } else {
+    }else{
       alert('Failed to mark as read');
     }
   });
 }
 </script>
+
 <!-- HIGH ALERTS -->
 <div class="card border-danger mb-4 shadow">
 <div class="card-header bg-danger text-white">⚠ High Organic Matter Alerts</div>
@@ -176,7 +173,7 @@ if(!$hasAlert) echo '<div class="alert-item">No alerts found</div>';
 </div>
 </div>
 
-<!-- DASHBOARD CARDS WITH IDs FOR DYNAMIC UPDATE -->
+<!-- DASHBOARD CARDS -->
 <div class="row mb-4">
 <div class="col-md-3">
   <div class="card text-white bg-primary shadow">
@@ -269,7 +266,6 @@ let organicChart = new Chart(ctx,{
     options:{plugins:{legend:{position:'bottom'}},cutout:'65%'}
 });
 
-// UPDATED: Dashboard + Table + Map + Cards all in sync
 function updateDashboard(){
     let safe=0, moderate=0, high=0;
     let alertHTML="", tableHTML="";
@@ -297,19 +293,15 @@ function updateDashboard(){
             <td>${p.detected_at}</td>
         </tr>`;
 
-        // Map markers
         if(markers[p.sample_code]) markers[p.sample_code].setStyle({color:statusColor(p.status), fillColor:statusColor(p.status)});
         else markers[p.sample_code]=L.circleMarker([8.4825+Math.random()*0.001,124.8252+Math.random()*0.001],{radius:10,color:statusColor(p.status),fillColor:statusColor(p.status),fillOpacity:0.8}).addTo(map);
         markers[p.sample_code].bindPopup(`<b>${p.pond_name}</b><br>Sample: ${p.sample_code}<br>Status: ${p.status}`);
     });
 
-    // Update cards dynamically
     document.getElementById('total-samples').textContent = ponds.length;
     document.getElementById('total-safe').textContent = safe;
     document.getElementById('total-moderate').textContent = moderate;
     document.getElementById('total-high').textContent = high;
-
-    // Update alerts + table + chart
     document.getElementById('alert-slider').innerHTML = alertHTML || '<div class="alert-item">No alerts</div>';
     document.getElementById('detections-tbody').innerHTML = tableHTML;
     organicChart.data.datasets[0].data=[safe,moderate,high];
