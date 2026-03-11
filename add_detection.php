@@ -14,7 +14,6 @@ if ($conn->connect_error) {
 
 $success = "";
 
-/* GET NEXT SAMPLE CODE PREVIEW */
 $result = $conn->query("SELECT MAX(detection_id) AS last_id FROM detections");
 $row = $result->fetch_assoc();
 $next_id = ($row['last_id'] ?? 0) + 1;

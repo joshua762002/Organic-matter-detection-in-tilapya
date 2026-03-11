@@ -1,27 +1,16 @@
 <?php
 session_start();
+if(!isset($_SESSION['user_id'])) header("Location:index.php");
 
-if (!isset($_SESSION["user_id"])) {
-    header("Location: index.php");
-    exit();
-}
-
-$conn = new mysqli("localhost", "root", "", "organic_tilapia");
-if ($conn->connect_error) die("Connection failed: ".$conn->connect_error);
+$conn = new mysqli("localhost","root","","organic_tilapia");
+if($conn->connect_error) die("Connection failed: ".$conn->connect_error);
 
 $user_id = (int)$_SESSION["user_id"];
 $userQuery = $conn->query("SELECT * FROM users WHERE user_id=$user_id");
 $user = $userQuery->fetch_assoc();
 
-/* ================================
-   MANAGER NOTIFICATION RECEIVER
-================================ */
-$notifications = $conn->query("
-SELECT sample_code, organic_level, water_temperature, ph_level, status, detected_at
-FROM admin_notifications
-ORDER BY detected_at DESC
-LIMIT 10
-");
+/* HIGH NOTIFICATIONS ONLY */
+$notifications = $conn->query("SELECT * FROM admin_notifications ORDER BY detected_at DESC LIMIT 20");
 
 /* ================================
    ORIGINAL SIMULATION CODE
@@ -38,13 +27,13 @@ $pondMapping = [
 $defaultStaff = [
     "SAMPLE-101"=>"Juan Dela Cruz",
     "SAMPLE-102"=>"Pedro Reyes",
-    "SAMPLE-103"=>"Linda walker",
-    "SAMPLE-104"=>"Coco martin",
-    "SAMPLE-105"=>"JACOBA SANTOS",
+    "SAMPLE-103"=>"Linda Walker",
+    "SAMPLE-104"=>"Coco Martin",
+    "SAMPLE-105"=>"Jacoba Santos",
     "SAMPLE-106"=>"Maria Santos",
 ];
 
-$latestDetections = [];
+$latestDetections = []; 
 foreach($pondMapping as $sample=>$pond){
     $latestDetections[$sample] = [
         'sample_code'=>$sample,
@@ -100,50 +89,66 @@ body{background:#f4f9f9;}
 <div class="container mt-4">
 <h2 class="mb-4 text-primary">Tilapia Organic Matter </h2>
 
-<!-- MANAGER NOTIFICATIONS -->
-<div class="card border-warning mb-4 shadow">
-<div class="card-header bg-warning text-dark">Manager Notifications</div>
-<div class="card-body" style="max-height:250px; overflow-y:auto;">
-<table class="table table-bordered table-sm">
-<thead>
-<tr>
-<th>Sample</th>
-<th>Organic</th>
-<th>Temp</th>
-<th>pH</th>
-<th>Status</th>
-<th>Date</th>
-</tr>
-</thead>
-<tbody>
-<?php
-if($notifications && $notifications->num_rows>0){
-    while($n=$notifications->fetch_assoc()){
-        // Determine badge color based on status
-        $status = $n['status'];
-        if($status == 'High') $color = 'bg-danger';
-        elseif($status == 'Moderate') $color = 'text-dark" style="background:#f39c12';
-        else $color = 'bg-success';
-?>
-<tr>
-    <td><?php echo $n['sample_code']; ?></td>
-    <td><?php echo $n['organic_level']; ?></td>
-    <td><?php echo $n['water_temperature']; ?></td>
-    <td><?php echo $n['ph_level']; ?></td>
-    <td><span class="badge <?php echo $color; ?>"><?php echo $status; ?></span></td>
-    <td><?php echo $n['detected_at']; ?></td>
-</tr>
-<?php
+<!-- ADMIN NOTIFICATIONS -->
+<div class="card border-danger mb-4 shadow">
+  <div class="card-header bg-danger text-white">Admin Notifications</div>
+  <div class="card-body" style="max-height:250px; overflow-y:auto;">
+    <table class="table table-bordered table-sm">
+      <thead>
+        <tr>
+          <th>Sample</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php
+        if($notifications && $notifications->num_rows > 0){
+            while($n = $notifications->fetch_assoc()){ ?>
+        <tr style="<?php echo $n['is_read'] ? '' : 'font-weight:bold;'; ?>">
+          <td><?php echo htmlspecialchars($n['sample_code']); ?></td>
+          <td>
+            <?php 
+            if($n['status']=='High') echo "<span class='badge bg-danger'>High</span>"; 
+            else echo htmlspecialchars($n['status']); 
+            ?>
+          </td>
+          <td><?php echo htmlspecialchars($n['detected_at']); ?></td>
+          <td>
+            <?php if(!$n['is_read']){ ?>
+              <button class="btn btn-sm btn-success" onclick="markAsRead(<?php echo $n['id']; ?>)">Mark as Read</button>
+            <?php } else { echo "Read"; } ?>
+          </td>
+        </tr>
+        <?php
+            }
+        } else { ?>
+        <tr><td colspan="4">No notifications</td></tr>
+        <?php } ?>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MARK AS READ SCRIPT -->
+<script>
+function markAsRead(id){
+  fetch('mark_as_read.php', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({id:id})
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.success){
+      location.reload(); // refresh para makita effect
+    } else {
+      alert('Failed to mark as read');
     }
-}else{
-    echo "<tr><td colspan='6'>No notifications yet</td></tr>";
+  });
 }
-?>
-</tbody>
-</tbody>
-</table>
-</div>
-</div>
+</script>
 
 <!-- HIGH ALERTS -->
 <div class="card border-danger mb-4 shadow">
@@ -154,10 +159,10 @@ if($notifications && $notifications->num_rows>0){
 <?php
 $hasAlert=false;
 foreach($latestDetections as $p){
-if($p['organic_level']>=10){
-echo '<div class="alert-item">⚠ Sample <b>'.$p['sample_code'].'</b> from <b>'.$p['pond_name'].'</b> detected HIGH Organic Matter (Level: '.$p['organic_level'].')</div>';
-$hasAlert=true;
-}
+    if($p['organic_level']>=10){
+        echo '<div class="alert-item">⚠ Sample <b>'.$p['sample_code'].'</b> from <b>'.$p['pond_name'].'</b> detected HIGH Organic Matter (Level: '.$p['organic_level'].')</div>';
+        $hasAlert=true;
+    }
 }
 if(!$hasAlert) echo '<div class="alert-item">No alerts found</div>';
 ?>

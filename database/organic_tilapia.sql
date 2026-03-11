@@ -1,12 +1,8 @@
--- ===============================
--- DATABASE CREATION
--- ===============================
+
 CREATE DATABASE IF NOT EXISTS organic_tilapia;
 USE organic_tilapia;
 
--- ===============================
--- USERS TABLE (Admin, Manager, Staff)
--- ===============================
+
 CREATE TABLE users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -111,13 +107,14 @@ CREATE TABLE IF NOT EXISTS notifications (
     FOREIGN KEY (manager_id) REFERENCES users(user_id)
 );
 
-
 CREATE TABLE admin_notifications (
-    detection_id INT(11) NOT NULL AUTO_INCREMENT,
-    pond_id INT(11),
+    id INT AUTO_INCREMENT PRIMARY KEY,
     sample_code VARCHAR(50) NOT NULL,
-    organic_level DECIMAL(5,2) NOT NULL,
-    status ENUM('Safe','Moderate','High'),
-    detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (detection_id)
+    organic_level FLOAT,
+    water_temperature FLOAT,
+    ph_level FLOAT,
+    status VARCHAR(20) NOT NULL,
+    detected_at DATETIME NOT NULL,
+    created_by INT,
+    is_read TINYINT(1) DEFAULT 0
 );

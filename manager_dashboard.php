@@ -25,13 +25,13 @@ $pondMapping = [
     "SAMPLE-106" => "Pond F"
 ];
 
-// Default staff
+// Staff mapping
 $defaultStaff = [
     "SAMPLE-101"=>"Juan Dela Cruz",
     "SAMPLE-102"=>"Pedro Reyes",
-    "SAMPLE-103"=>"Linda walker",
-    "SAMPLE-104"=>"Coco martin",
-    "SAMPLE-105"=>"JACOBA SANTOS",
+    "SAMPLE-103"=>"Linda Walker",
+    "SAMPLE-104"=>"Coco Martin",
+    "SAMPLE-105"=>"Jacoba Santos",
     "SAMPLE-106"=>"Maria Santos",
 ];
 
@@ -50,7 +50,6 @@ foreach ($pondMapping as $sample => $pond) {
     ];
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -69,10 +68,10 @@ foreach ($pondMapping as $sample => $pond) {
         .alert-item { white-space:nowrap; color:#c0392b; font-weight:600; font-size:15px; }
         @keyframes slideAlerts { 0%{transform:translateX(100%);} 100%{transform:translateX(-100%);} }
 
-        /* Notify Admin button style */
+        /* Notify Admin button */
         #notify-admin { margin-bottom: 15px; }
 
-        /* Toast styles */
+        /* Toast */
         #toast-container { position:fixed; top:20px; right:20px; z-index:9999; }
         .toast-professional { background:#fff; border-left:5px solid #e74c3c; padding:15px 20px; margin-bottom:10px; box-shadow:0 4px 8px rgba(0,0,0,0.2); border-radius:6px; font-family:monospace; opacity:0; transform:translateY(-20px); transition:0.5s; }
         .toast-professional.show { opacity:1; transform:translateY(0); }
@@ -83,7 +82,6 @@ foreach ($pondMapping as $sample => $pond) {
     </style>
 </head>
 <body>
-
 <nav class="navbar navbar-dark bg-dark">
     <div class="container-fluid">
         <span class="navbar-brand">IoT Simulation Dashboard</span>
@@ -133,7 +131,7 @@ foreach ($pondMapping as $sample => $pond) {
         </div>
     </div>
 
-    <!-- Table + Notify Button -->
+    <!-- Table + Notify -->
     <div class="card shadow mb-5">
         <div class="card-header bg-success text-white">Recent Detections (Simulation)</div>
         <div class="card-body" style="max-height:450px; overflow-y:auto;">
@@ -156,9 +154,7 @@ foreach ($pondMapping as $sample => $pond) {
         </div>
     </div>
 
-    <!-- Toast container -->
     <div id="toast-container"></div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -178,7 +174,6 @@ let organicChart = new Chart(ctx, {
     options:{ plugins:{ legend:{ position:'bottom' } }, cutout:'65%' }
 });
 
-// Status color
 function statusColor(status){
     if(status=="Safe") return '#2ecc71';
     if(status=="Moderate") return '#f39c12';
@@ -186,7 +181,6 @@ function statusColor(status){
     return '#95a5a6';
 }
 
-// Simulate detection
 function simulateDetection(p){
     p.organic_level = Math.floor(Math.random()*16);
     p.water_temperature = 24 + Math.floor(Math.random()*9);
@@ -194,10 +188,9 @@ function simulateDetection(p){
     if(p.organic_level >= 10) p.status="High";
     else if(p.organic_level >=5) p.status="Moderate";
     else p.status="Safe";
-    p.detected_at = new Date().toLocaleString();
+    p.detected_at = new Date().toISOString().slice(0,19).replace("T"," ");
 }
 
-// Update dashboard
 function updateDashboard(){
     let safe=0, moderate=0, high=0;
     let alertHTML="", tableHTML="";
@@ -238,7 +231,6 @@ function updateDashboard(){
     organicChart.update();
 }
 
-// Toast notification
 function showToast(lines, type="high"){
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -264,28 +256,40 @@ function showToast(lines, type="high"){
     toast.appendChild(footer);
 
     container.appendChild(toast);
-
-    setTimeout(()=>{
-        toast.classList.remove('show');
-        setTimeout(()=>container.removeChild(toast), 500);
-    }, 6000);
+    setTimeout(()=>{ toast.classList.remove('show'); setTimeout(()=>container.removeChild(toast),500); }, 6000);
 }
 
-// Notify Admin button
+// ===== Notify Admin button =====
 document.getElementById('notify-admin').addEventListener('click', ()=>{
+
     let highPonds = ponds.filter(p=>p.status=="High");
+
     if(highPonds.length===0){
-        showToast(["No high organic levels to notify."], "safe");
+        alert("No high organic levels to notify.");
         return;
     }
-    let messageLines = highPonds.map(p=>`${p.full_name} | ${p.pond_name} | ${p.sample_code} | Level: ${p.organic_level}`);
-    showToast(messageLines, "high");
-});
 
+    // **Totoong POST sa notify_admin.php**
+    fetch('notify_admin.php', {  // relative path
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(highPonds)
+})
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            // Toast lang para makita ng manager
+            let lines = highPonds.map(p=>`${p.full_name} | ${p.pond_name} | ${p.sample_code} | Level: ${p.organic_level}`);
+            alert("Notification sent to Admin:\n" + lines.join("\n"));
+        } else {
+            alert("Error sending notifications: "+(data.message||'Unknown'));
+        }
+    })
+    .catch(err => alert("Fetch error: "+err));
+});
 // Initial render
 updateDashboard();
-setInterval(updateDashboard, 300000); // 5 minutes
+setInterval(updateDashboard, 300000); // 5 min
 </script>
-
 </body>
 </html>
