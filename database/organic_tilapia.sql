@@ -13,7 +13,7 @@ CREATE TABLE users (
     last_login TIMESTAMP NULL
 );
 
---
+
 INSERT INTO users (username, password, full_name, role)
 VALUES
 ('admin', '1234', 'System Administrator', 'admin'),
@@ -102,8 +102,8 @@ VALUES
 CREATE TABLE admin_notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sample_code VARCHAR(50) NOT NULL,
-    full_name VARCHAR(100),       -- added to match ERD
-    pond_name VARCHAR(50),        -- added to match ERD
+    full_name VARCHAR(100),       
+    pond_name VARCHAR(50),        
     organic_level FLOAT,
     water_temperature FLOAT,
     ph_level FLOAT,

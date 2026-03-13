@@ -9,7 +9,7 @@ $user_id = (int)$_SESSION["user_id"];
 $userQuery = $conn->query("SELECT * FROM users WHERE user_id=$user_id");
 $user = $userQuery->fetch_assoc();
 
-/* HIGH NOTIFICATIONS ONLY */
+
 $notifications = $conn->query("SELECT * FROM admin_notifications ORDER BY detected_at DESC LIMIT 20");
 
 $pondMapping = [

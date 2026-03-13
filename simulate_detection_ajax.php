@@ -8,7 +8,7 @@ $organic = floatval($_POST['organic_level']);
 $temp = floatval($_POST['water_temperature']);
 $ph = floatval($_POST['ph_level']);
 
-// Determine status
+
 if($organic < 50) $status = 'Safe';
 elseif($organic < 80) $status = 'Moderate';
 else $status = 'High';
@@ -17,7 +17,7 @@ $stmtInsert = $conn->prepare("INSERT INTO detections (sample_code, organic_level
 $stmtInsert->bind_param("sddssi", $sample_code, $organic, $temp, $ph, $status, $user_id);
 $stmtInsert->execute();
 
-// Get updated stats
+
 $total = $conn->query("SELECT COUNT(*) as total FROM detections WHERE created_by=$user_id")->fetch_assoc()['total'];
 $safe = $conn->query("SELECT COUNT(*) as total FROM detections WHERE created_by=$user_id AND status='Safe'")->fetch_assoc()['total'];
 $moderate = $conn->query("SELECT COUNT(*) as total FROM detections WHERE created_by=$user_id AND status='Moderate'")->fetch_assoc()['total'];

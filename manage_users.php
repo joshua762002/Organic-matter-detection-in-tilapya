@@ -21,7 +21,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 $message = "";
 
-/* ================= ADD USER ================= */
+
 if (isset($_POST["add_user"])) {
 
     $username = trim($_POST["username"]);
@@ -29,7 +29,7 @@ if (isset($_POST["add_user"])) {
     $full_name = trim($_POST["full_name"]);
     $role = isset($_POST["role"]) ? strtolower(trim($_POST["role"])) : "staff";
 
-    // Validate role: only admin, staff, manager allowed
+    
     if (!in_array($role, ["admin", "staff", "manager"])) {
         $role = "staff";
     }
@@ -54,7 +54,7 @@ if (isset($_POST["add_user"])) {
     exit();
 }
 
-/* ================= DELETE USER ================= */
+
 if (isset($_GET["delete"])) {
 
     $delete_id = intval($_GET["delete"]);
@@ -81,7 +81,7 @@ if (isset($_GET["delete"])) {
     exit();
 }
 
-/* ================= UPDATE USER ================= */
+
 if (isset($_POST["update_user"])) {
 
     $user_id = intval($_POST["user_id"]);
@@ -89,7 +89,7 @@ if (isset($_POST["update_user"])) {
     $full_name = $_POST["full_name"];
     $role = $_POST["role"];
 
-    // Validate role
+    
     if (!in_array($role, ["admin", "staff", "manager"])) {
         $role = "staff";
     }
@@ -104,7 +104,7 @@ if (isset($_POST["update_user"])) {
     exit();
 }
 
-/* ================= MESSAGE DISPLAY ================= */
+
 if (isset($_GET["msg"])) {
 
     if ($_GET["msg"] == "deleted") {
@@ -155,7 +155,7 @@ $users = $conn->query("SELECT * FROM users ORDER BY created_at DESC");
 </div>
 <?php endif; ?>
 
-<!-- Add New User -->
+
 <div class="card mb-4 shadow">
 <div class="card-header bg-success text-white">
 Add New User
@@ -198,7 +198,7 @@ Add
 </div>
 </div>
 
-<!-- All Users Table -->
+
 <div class="card shadow">
 <div class="card-header bg-primary text-white">
 All Registered Users

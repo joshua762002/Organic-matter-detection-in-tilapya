@@ -15,7 +15,7 @@ $user_id = (int)$_SESSION["user_id"];
 $userQuery = $conn->query("SELECT * FROM users WHERE user_id = $user_id");
 $user = $userQuery->fetch_assoc();
 
-// Pond mapping
+
 $pondMapping = [
     "SAMPLE-101" => "Pond A",
     "SAMPLE-102" => "Pond B",
@@ -25,7 +25,7 @@ $pondMapping = [
     "SAMPLE-106" => "Pond F"
 ];
 
-// Staff mapping
+
 $defaultStaff = [
     "SAMPLE-101"=>"Juan Dela Cruz",
     "SAMPLE-102"=>"Pedro Reyes",
@@ -35,7 +35,7 @@ $defaultStaff = [
     "SAMPLE-106"=>"Maria Santos",
 ];
 
-// Initial simulation data
+
 $latestDetections = [];
 foreach ($pondMapping as $sample => $pond) {
     $latestDetections[$sample] = [
@@ -68,10 +68,10 @@ foreach ($pondMapping as $sample => $pond) {
         .alert-item { white-space:nowrap; color:#c0392b; font-weight:600; font-size:15px; }
         @keyframes slideAlerts { 0%{transform:translateX(100%);} 100%{transform:translateX(-100%);} }
 
-        /* Notify Admin button */
+        
         #notify-admin { margin-bottom: 15px; }
 
-        /* Toast */
+        
         #toast-container { position:fixed; top:20px; right:20px; z-index:9999; }
         .toast-professional { background:#fff; border-left:5px solid #e74c3c; padding:15px 20px; margin-bottom:10px; box-shadow:0 4px 8px rgba(0,0,0,0.2); border-radius:6px; font-family:monospace; opacity:0; transform:translateY(-20px); transition:0.5s; }
         .toast-professional.show { opacity:1; transform:translateY(0); }
@@ -95,7 +95,7 @@ foreach ($pondMapping as $sample => $pond) {
 <div class="container mt-4">
     <h2 class="mb-4 text-primary">Tilapia Organic Matter Simulation</h2>
 
-    <!-- Alerts -->
+    
     <div class="card border-danger mb-4 shadow">
         <div class="card-header bg-danger text-white">⚠ High Organic Matter Alerts</div>
         <div class="card-body">
@@ -105,7 +105,7 @@ foreach ($pondMapping as $sample => $pond) {
         </div>
     </div>
 
-    <!-- Summary -->
+    
     <div class="row mb-4">
         <div class="col-md-3"><div class="card text-white bg-primary shadow"><div class="card-body text-center"><h6>Total Samples</h6><h2 id="total-samples">6</h2></div></div></div>
         <div class="col-md-3"><div class="card text-white bg-success shadow"><div class="card-body text-center"><h6>Safe</h6><h2 id="safe-count">0</h2></div></div></div>
@@ -113,7 +113,7 @@ foreach ($pondMapping as $sample => $pond) {
         <div class="col-md-3"><div class="card text-white bg-danger shadow"><div class="card-body text-center"><h6>High</h6><h2 id="high-count">0</h2></div></div></div>
     </div>
 
-    <!-- Map + Chart -->
+    
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card shadow">
@@ -131,7 +131,7 @@ foreach ($pondMapping as $sample => $pond) {
         </div>
     </div>
 
-    <!-- Table + Notify -->
+    
     <div class="card shadow mb-5">
         <div class="card-header bg-success text-white">Recent Detections (Simulation)</div>
         <div class="card-body" style="max-height:450px; overflow-y:auto;">
@@ -161,12 +161,12 @@ foreach ($pondMapping as $sample => $pond) {
 <script>
 let ponds = <?php echo json_encode(array_values($latestDetections)); ?>;
 
-// Map
+
 const map = L.map('map').setView([8.4828,124.8254],14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'OpenStreetMap' }).addTo(map);
 let markers = {};
 
-// Chart
+
 const ctx = document.getElementById('organicChart');
 let organicChart = new Chart(ctx, {
     type:'doughnut',
@@ -206,7 +206,7 @@ function updateDashboard(){
                     p.status=="Moderate"?'<span class="badge text-dark" style="background:#f39c12;">Moderate</span>':
                     '<span class="badge bg-success">Safe</span>';
 
-        // Inside updateDashboard() when building tableHTML
+       
                 tableHTML += `<tr>
                     <td>${p.full_name}</td>
                     <td>${p.pond_name}</td>
@@ -260,7 +260,7 @@ function showToast(lines, type="high"){
     setTimeout(()=>{ toast.classList.remove('show'); setTimeout(()=>container.removeChild(toast),500); }, 6000);
 }
 
-// ===== Notify Admin button =====
+
 document.getElementById('notify-admin').addEventListener('click', ()=>{
 
     let highPonds = ponds.filter(p=>p.status=="High");
@@ -270,8 +270,8 @@ document.getElementById('notify-admin').addEventListener('click', ()=>{
         return;
     }
 
-    // **Totoong POST sa notify_admin.php**
-    fetch('notify_admin.php', {  // relative path
+    
+    fetch('notify_admin.php', {  
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
     body: JSON.stringify(highPonds)
@@ -279,7 +279,7 @@ document.getElementById('notify-admin').addEventListener('click', ()=>{
     .then(res => res.json())
     .then(data => {
         if(data.success){
-            // Toast lang para makita ng manager
+            
             let lines = highPonds.map(p=>`${p.full_name} | ${p.pond_name} | ${p.sample_code} | Level: ${p.organic_level}`);
             alert("Notification sent to Admin:\n" + lines.join("\n"));
         } else {
@@ -288,7 +288,7 @@ document.getElementById('notify-admin').addEventListener('click', ()=>{
     })
     .catch(err => alert("Fetch error: "+err));
 });
-// Initial render
+
 updateDashboard();
 setInterval(updateDashboard, 300000); // 5 min
 </script>

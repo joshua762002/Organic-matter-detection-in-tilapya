@@ -55,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $ph_indicator = "Dangerous";
     }
 
-    /* TEMP SAMPLE CODE */
+    
     $sample_code = "TEMP";
 
     $stmt = $conn->prepare("INSERT INTO detections 
@@ -74,13 +74,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt->execute()) {
 
-        /* GET AUTO ID */
+        
         $detection_id = $conn->insert_id;
 
-        /* GENERATE SAMPLE CODE */
+        
         $sample_code = "SAMPLE-" . str_pad($detection_id, 3, "0", STR_PAD_LEFT);
 
-        /* UPDATE SAMPLE CODE */
+        
         $conn->query("UPDATE detections 
                       SET sample_code='$sample_code' 
                       WHERE detection_id=$detection_id");
